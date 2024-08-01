@@ -49,7 +49,7 @@ export const userRouter = createTRPCRouter({
       const verificationToken = await generateVerificationToken(email);
 
       if (verificationToken) {
-        const confirmLink = `${env.NEXTAUTH_URL}/newVerification?token=${verificationToken.token}`;
+        const confirmLink = `${env.DOMAIN_URL}/newVerification?token=${verificationToken.token}`;
         const sentFrom = new Sender(
           "WhoopFit@trial-0r83ql3vrovgzw1j.mlsender.net",
           "Kuldeep",
@@ -99,7 +99,7 @@ export const userRouter = createTRPCRouter({
         existingUser.email,
       );
       if (verificationToken) {
-        const confirmLink = `${env.NEXTAUTH_URL}/newVerification?token=${verificationToken.token}`;
+        const confirmLink = `${env.DOMAIN_URL}/newVerification?token=${verificationToken.token}`;
         const sentFrom = new Sender(
           "WhoopFit@trial-0r83ql3vrovgzw1j.mlsender.net",
           "Kuldeep",
