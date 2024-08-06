@@ -1,13 +1,13 @@
-import ActiveChallenge from "../_components/rootPage/ActiveChallenge";
-import ActiveSelfChallenge from "../_components/rootPage/ActiveSelfChallenge";
+import AcceptedChallenge from "../_components/challenge/AcceptedChallenge";
+import AcceptedSelfChallenge from "../_components/rootPage/ActiveSelfChallenge";
 import UserInfo from "../_components/rootPage/UserInfo";
 
 const RootPage = () => {
   return (
-    <main className="space-y-10 px-4 py-10 md:px-6">
+    <main className="space-y-4 px-6 py-10 md:px-6">
       <UserInfo />
-      <ActiveChallenge />
-      <ActiveSelfChallenge />
+      <AcceptedChallenge />
+      <AcceptedSelfChallenge />
     </main>
   );
 };

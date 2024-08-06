@@ -43,6 +43,9 @@ const LoginPage = () => {
         } catch (error) {
           setError("Something went wrong try again later!");
         }
+      } else {
+        setSuccess(data.success);
+        setError(undefined);
       }
     },
     onError: (error) => {

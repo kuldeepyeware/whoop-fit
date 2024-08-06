@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/non-nullable-type-assertion-style */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /**
  * YOU PROBABLY DON'T NEED TO EDIT THIS FILE, UNLESS:
  * 1. You want to modify request context (see Part 1).
@@ -13,6 +15,7 @@ import { ZodError } from "zod";
 
 import { getServerAuthSession } from "@/server/auth";
 import { db } from "@/server/db";
+import { refreshWhoopToken } from "@/lib/whoopApi";
 
 /**
  * 1. CONTEXT
@@ -90,8 +93,8 @@ const timingMiddleware = t.middleware(async ({ next, path }) => {
 
   if (t._config.isDev) {
     // artificial delay in dev
-    const waitMs = Math.floor(Math.random() * 400) + 100;
-    await new Promise((resolve) => setTimeout(resolve, waitMs));
+    // const waitMs = Math.floor(Math.random() * 400) + 100;
+    // await new Promise((resolve) => setTimeout(resolve, waitMs));
   }
 
   const result = await next();
@@ -100,6 +103,69 @@ const timingMiddleware = t.middleware(async ({ next, path }) => {
   console.log(`[TRPC] ${path} took ${end - start}ms to execute`);
 
   return result;
+});
+
+const whoopTokenMiddleware = t.middleware(async ({ ctx, next }) => {
+  if (!ctx.session || !ctx.session.user) {
+    throw new TRPCError({ code: "UNAUTHORIZED" });
+  }
+
+  const user = await ctx.db.user.findUnique({
+    where: { id: ctx.session.user.id },
+    select: {
+      whoopAccessToken: true,
+      whoopRefreshToken: true,
+      whoopTokenExpiry: true,
+    },
+  });
+
+  if (!user) {
+    throw new TRPCError({
+      code: "UNAUTHORIZED",
+      message: "WHOOP not connected",
+    });
+  }
+
+  const expirationThreshold = 5 * 60 * 1000; // 5 minutes in milliseconds
+
+  if (
+    user.whoopTokenExpiry &&
+    user.whoopTokenExpiry.getTime() - Date.now() < expirationThreshold
+  ) {
+    try {
+      const { access_token, refresh_token, expires_in } =
+        await refreshWhoopToken(user?.whoopRefreshToken as string);
+
+      console.log("Refreshed");
+      console.log("Refreshed");
+      console.log("Refreshed");
+      console.log("Refreshed");
+      console.log("Refreshed");
+
+      const newExpiryDate = new Date(Date.now() + expires_in * 1000);
+
+      await ctx.db.user.update({
+        where: { id: ctx.session.user.id },
+        data: {
+          whoopAccessToken: access_token,
+          whoopRefreshToken: refresh_token,
+          whoopTokenExpiry: newExpiryDate,
+        },
+      });
+    } catch (error) {
+      console.error("Error refreshing WHOOP token:", error);
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Failed to refresh WHOOP token",
+      });
+    }
+  }
+
+  return next({
+    ctx: {
+      ...ctx,
+    },
+  });
 });
 
 /**
@@ -132,3 +198,17 @@ export const protectedProcedure = t.procedure
       },
     });
   });
+
+export const protectedWhoopProcedure = t.procedure
+  .use(timingMiddleware)
+  .use(({ ctx, next }) => {
+    if (!ctx.session || !ctx.session.user) {
+      throw new TRPCError({ code: "UNAUTHORIZED" });
+    }
+    return next({
+      ctx: {
+        session: { ...ctx.session, user: ctx.session.user },
+      },
+    });
+  })
+  .use(whoopTokenMiddleware);

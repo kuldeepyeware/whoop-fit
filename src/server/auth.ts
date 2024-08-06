@@ -10,7 +10,7 @@ import credentials from "next-auth/providers/credentials";
 import { env } from "@/env";
 import { db } from "@/server/db";
 import { loginFormSchema } from "@/schemas/authFormSchema";
-import { getUserByEmail } from "@/data/user";
+import { getUserByEmail, getUserById } from "@/data/user";
 import { compare } from "bcryptjs";
 
 /**
@@ -52,6 +52,16 @@ export const authOptions: NextAuthOptions = {
     },
   },
   callbacks: {
+    async signIn({ user, account }) {
+      if (account?.provider !== "credentials") return true;
+
+      const existingUser = await getUserById(user.id);
+
+      if (!existingUser?.emailVerified) return false;
+
+      return true;
+    },
+
     jwt: ({ token, user }) => {
       if (user) {
         token.id = user.id;

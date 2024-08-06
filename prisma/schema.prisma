@@ -52,6 +52,7 @@ model User {
   whoopSleep           Json?
   whoopCycles          Json?
   whoopBodyMeasurement Json?
+  defaultAddress      String?
   accounts          Account[]
 }
 

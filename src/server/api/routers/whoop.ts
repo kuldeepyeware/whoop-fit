@@ -1,6 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-/* eslint-disable @typescript-eslint/no-unsafe-return */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 
@@ -8,7 +5,7 @@ import { z } from "zod";
 import {
   createCallerFactory,
   createTRPCRouter,
-  protectedProcedure,
+  protectedWhoopProcedure,
 } from "@/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { env } from "@/env";
@@ -23,7 +20,7 @@ import {
 } from "@/data/whoop";
 
 export const whoopRouter = createTRPCRouter({
-  getAuthUrl: protectedProcedure.mutation(() => {
+  getAuthUrl: protectedWhoopProcedure.mutation(() => {
     const state = crypto.randomBytes(16).toString("hex");
     const authorizationUrl =
       `${env.WHOOP_API_HOSTNAME}/oauth/oauth2/auth?` +
@@ -36,7 +33,7 @@ export const whoopRouter = createTRPCRouter({
     return authorizationUrl;
   }),
 
-  fetchAndStoreWhoopData: protectedProcedure.mutation(async ({ ctx }) => {
+  fetchAndStoreWhoopData: protectedWhoopProcedure.mutation(async ({ ctx }) => {
     const user = await ctx.db.user.findUnique({
       where: { id: ctx.session?.user.id },
     });
@@ -83,7 +80,7 @@ export const whoopRouter = createTRPCRouter({
     }
   }),
 
-  oauthCallback: protectedProcedure
+  oauthCallback: protectedWhoopProcedure
     .input(z.object({ code: z.string(), state: z.string() }))
     .mutation(async ({ input, ctx }) => {
       try {
@@ -142,10 +139,7 @@ export const whoopRouter = createTRPCRouter({
 
         const caller = createCallerFactory(whoopRouter);
 
-        // Use the caller to call fetchAndStoreWhoopData
         await caller({ ...ctx }).fetchAndStoreWhoopData();
-        // Fetch and store WHOOP data
-        // await ctx.router.fetchAndStoreWhoopData.mutate(undefined, { ctx });
 
         return { success: true };
       } catch (error) {
@@ -157,7 +151,7 @@ export const whoopRouter = createTRPCRouter({
       }
     }),
 
-  getProfile: protectedProcedure.query(async ({ ctx }) => {
+  getProfile: protectedWhoopProcedure.query(async ({ ctx }) => {
     const user = await ctx.db.user.findUnique({
       where: { id: ctx.session?.user.id },
     });
@@ -167,11 +161,6 @@ export const whoopRouter = createTRPCRouter({
         code: "UNAUTHORIZED",
         message: "WHOOP not connected",
       });
-    }
-
-    // Check if token is expired and refresh if necessary
-    if (user.whoopTokenExpiry && user.whoopTokenExpiry < new Date()) {
-      // Implement token refresh logic here
     }
 
     const profileResponse = await fetch(
@@ -193,10 +182,11 @@ export const whoopRouter = createTRPCRouter({
     return profileResponse.json();
   }),
 
-  getWhoopData: protectedProcedure.query(async ({ ctx }) => {
+  getWhoopData: protectedWhoopProcedure.query(async ({ ctx }) => {
     const user = await ctx.db.user.findUnique({
       where: { id: ctx.session?.user.id },
       select: {
+        defaultAddress: true,
         whoopProfile: true,
         whoopWorkouts: true,
         whoopRecoveries: true,
@@ -216,7 +206,7 @@ export const whoopRouter = createTRPCRouter({
     return user;
   }),
 
-  checkWhoopConnection: protectedProcedure.query(async ({ ctx }) => {
+  checkWhoopConnection: protectedWhoopProcedure.query(async ({ ctx }) => {
     const user = await ctx.db.user.findUnique({
       where: { id: ctx.session?.user.id },
       select: { whoopAccessToken: true },
@@ -224,6 +214,4 @@ export const whoopRouter = createTRPCRouter({
 
     return { isConnected: !!user?.whoopAccessToken };
   }),
-
-  // Add other WHOOP-related procedures (getWorkouts, getStrainScore, getRecovery) here
 });

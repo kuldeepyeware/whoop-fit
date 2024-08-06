@@ -30,7 +30,10 @@ export const env = createEnv({
     WHOOP_API_HOSTNAME: z.string(),
     WHOOP_REDIRECT_URI: z.string(),
     DIRECT_DATABASE_URL: z.string(),
+    PRIVATE_KEY: z.string(),
+    RPC_URL: z.string(),
     DOMAIN_URL: z.string(),
+    CRON_SECRET: z.string(),
   },
 
   /**
@@ -60,6 +63,9 @@ export const env = createEnv({
     WHOOP_API_HOSTNAME: process.env.WHOOP_API_HOSTNAME,
     WHOOP_REDIRECT_URI: process.env.WHOOP_REDIRECT_URI,
     DOMAIN_URL: process.env.DOMAIN_URL,
+    PRIVATE_KEY: process.env.PRIVATE_KEY,
+    RPC_URL: process.env.RPC_URL,
+    CRON_SECRET: process.env.CRON_SECRET,
     NEXT_PUBLIC_Wallet_Connect_Id: process.env.NEXT_PUBLIC_Wallet_Connect_Id,
   },
   /**

@@ -1,122 +1,148 @@
-import {
-  CalendarDaysIcon,
-  ClockIcon,
-  MedalIcon,
-  PlusIcon,
-  TrophyIcon,
-} from "lucide-react";
-import { Button } from "../ui/button";
-import { Card } from "../ui/card";
-import { Badge } from "../ui/badge";
+/* eslint-disable @typescript-eslint/no-floating-promises */
+"use client";
 
-const ActiveSelfChallenge = () => {
+import { WhoopTokenAbi, WhoopTokenAddress } from "WhoopContract";
+import { useEffect, useState } from "react";
+import { useAccount, useReadContract } from "wagmi";
+import { Button } from "@/app/_components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/app/_components/ui/card";
+import { Badge } from "@/app/_components/ui/badge";
+import { type SelfChallenge } from "@/schemas/types/challengeTypes";
+import {
+  formatTimeRemaining,
+  getBadgeVariant,
+  getChallengeTypeString,
+} from "@/lib/challenge";
+import { ClockIcon } from "lucide-react";
+import { api } from "@/trpc/react";
+import { useToast } from "../ui/use-toast";
+import ActiveSelfChallengeSkeleton from "../skeleton/ActiveSelfChallengeSkeleton";
+
+const AcceptedSelfChallenge = () => {
+  const [acceptedChallenges, setAcceptedChallenges] = useState<SelfChallenge[]>(
+    [],
+  );
+  const [checkResultChallengeId, setCheckResultChallengeId] = useState<
+    bigint | null
+  >(null);
+  const { address } = useAccount();
+  const { toast } = useToast();
+
+  const {
+    data: acceptedChallengesData,
+    refetch: refetchAcceptedChallenges,
+    isLoading: loadingAcceptedChallenge,
+  } = useReadContract({
+    address: WhoopTokenAddress,
+    abi: WhoopTokenAbi,
+    functionName: "getAcceptedSelfChallengesForUser",
+    args: [address],
+  });
+
+  const { mutateAsync: updateTargetMutation, isPending } =
+    api.user.updateSelfTargetStatus.useMutation({
+      onSuccess: () => {
+        toast({
+          title: "Evaluated result successfully!",
+        });
+        setCheckResultChallengeId(null);
+        refetchAcceptedChallenges();
+      },
+      onError: () => {
+        toast({
+          title: "Something went wrong try again later!",
+        });
+        setCheckResultChallengeId(null);
+        refetchAcceptedChallenges();
+      },
+    });
+
+  const handleCheckResult = async (challenge: SelfChallenge) => {
+    setCheckResultChallengeId(challenge.challengeId);
+    updateTargetMutation(challenge);
+  };
+
+  useEffect(() => {
+    if (acceptedChallengesData)
+      setAcceptedChallenges(acceptedChallengesData as SelfChallenge[]);
+  }, [acceptedChallengesData]);
+
+  if (loadingAcceptedChallenge) {
+    return <ActiveSelfChallengeSkeleton />;
+  }
+
   return (
-    <div>
-      <section>
-        <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold">Active Self Challenges</h2>
-          <Button>
-            <PlusIcon className="mr-2 h-5 w-5" />
-            New Challenge
-          </Button>
+    <section>
+      <CardHeader>
+        <CardTitle>Active Self Challenges</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="flex flex-wrap justify-center gap-4 md:justify-start">
+          {acceptedChallenges.length > 0 ? (
+            acceptedChallenges.map((challenge, index) => (
+              <Card
+                key={challenge.challengeId.toString() + index}
+                className="mb-4 w-[324px] rounded-lg border border-gray-200 bg-white p-6 shadow-md transition-shadow duration-300 hover:shadow-lg"
+              >
+                <div className="flex h-full flex-col justify-between">
+                  <div className="mb-2 flex items-center justify-between">
+                    <h3 className="text-xl font-bold text-gray-800">
+                      {getChallengeTypeString(challenge.challengeType)}
+                    </h3>
+                    <Badge
+                      className="rounded-md px-2 py-1 text-xs"
+                      variant={getBadgeVariant(challenge.status)}
+                    >
+                      {getBadgeVariant(challenge.status)}
+                    </Badge>
+                  </div>
+                  <div className="mb-4 space-y-2">
+                    <p className="text-sm text-gray-600">
+                      <span className="font-semibold">Target:</span>{" "}
+                      {challenge.challengeTarget.toString()}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      <ClockIcon className="mr-1 inline-block h-4 w-4 text-gray-500" />
+                      {formatTimeRemaining(challenge.endTime)}
+                    </p>
+                    {formatTimeRemaining(challenge.endTime) === "Ended" &&
+                      challenge.status == 4 && (
+                        <p className="text-sm text-gray-600">
+                          <span className="font-semibold">Target Reached:</span>{" "}
+                          {challenge.targetReached ? "Yes" : "No"}
+                        </p>
+                      )}
+                  </div>
+                  {formatTimeRemaining(challenge.endTime) === "Ended" &&
+                    challenge.status == 1 && (
+                      <Button
+                        variant="default"
+                        className="bg-green-500 text-white transition-colors hover:bg-green-600"
+                        disabled={isPending}
+                        onClick={() => handleCheckResult(challenge)}
+                      >
+                        {checkResultChallengeId == challenge.challengeId
+                          ? isPending
+                            ? "Checking..."
+                            : "Check Result"
+                          : "Check Result"}
+                      </Button>
+                    )}
+                </div>
+              </Card>
+            ))
+          ) : (
+            <p>No self accepted challenges</p>
+          )}
         </div>
-        <div className="mt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <Card className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                {/* <Avatar className="w-8 h-8">
-                      <AvatarImage src="/placeholder-user.jpg" />
-                      <AvatarFallback>JD</AvatarFallback>
-                    </Avatar> */}
-                <div className="font-medium">John Doe</div>
-              </div>
-              <Badge variant="secondary">Ongoing</Badge>
-            </div>
-            <div className="mt-4">
-              <div className="text-lg font-bold">
-                30-Day Strain Score Challenge
-              </div>
-              <div className="mt-1 text-sm text-muted-foreground">
-                Reach a daily strain score of 15 or higher for 30 days straight.
-              </div>
-            </div>
-            <div className="mt-4 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <ClockIcon className="h-5 w-5 text-muted-foreground" />
-                <div className="text-sm text-muted-foreground">
-                  Ends in 12 days
-                </div>
-              </div>
-              <Button variant="secondary">
-                <TrophyIcon className="mr-2 h-5 w-5" />
-                Join
-              </Button>
-            </div>
-          </Card>
-          <Card className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                {/* <Avatar className="h-8 w-8">
-                  <AvatarImage src="/placeholder-user.jpg" />
-                  <AvatarFallback>JD</AvatarFallback>
-                </Avatar> */}
-                <div className="font-medium">Jane Doe</div>
-              </div>
-              <Badge>Completed</Badge>
-            </div>
-            <div className="mt-4">
-              <div className="text-lg font-bold">100% Recovery Challenge</div>
-              <div className="mt-1 text-sm text-muted-foreground">
-                Achieve a 100% recovery score for 7 days in a row.
-              </div>
-            </div>
-            <div className="mt-4 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <TrophyIcon className="h-5 w-5 text-muted-foreground" />
-                <div className="text-sm text-muted-foreground">
-                  Completed on Aug 15, 2023
-                </div>
-              </div>
-              <Button variant="secondary">
-                <MedalIcon className="mr-2 h-5 w-5" />
-                View
-              </Button>
-            </div>
-          </Card>
-          <Card className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                {/* <Avatar className="h-8 w-8">
-                  <AvatarImage src="/placeholder-user.jpg" />
-                  <AvatarFallback>JD</AvatarFallback>
-                </Avatar> */}
-                <div className="font-medium">Alex Smith</div>
-              </div>
-              <Badge variant="destructive">Upcoming</Badge>
-            </div>
-            <div className="mt-4">
-              <div className="text-lg font-bold">10K Steps Challenge</div>
-              <div className="mt-1 text-sm text-muted-foreground">
-                Hit 10,000 steps per day for 14 days straight.
-              </div>
-            </div>
-            <div className="mt-4 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <CalendarDaysIcon className="h-5 w-5 text-muted-foreground" />
-                <div className="text-sm text-muted-foreground">
-                  Starts on Sep 1, 2023
-                </div>
-              </div>
-              <Button variant="secondary">
-                <PlusIcon className="mr-2 h-5 w-5" />
-                Join
-              </Button>
-            </div>
-          </Card>
-        </div>
-      </section>
-    </div>
+      </CardContent>
+    </section>
   );
 };
 
-export default ActiveSelfChallenge;
+export default AcceptedSelfChallenge;

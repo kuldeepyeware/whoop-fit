@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-
 import { env } from "@/env";
 
 export async function refreshWhoopToken(refreshToken: string) {

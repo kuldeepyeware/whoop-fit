@@ -1,4 +1,5 @@
 type WhoopDataType = {
+  defaultAddress: string;
   whoopProfile: {
     email: string;
     user_id: number;
