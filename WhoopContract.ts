@@ -1380,4 +1380,4 @@ export const WhoopTokenAbi = [
   },
 ];
 
-export const WhoopTokenAddress = "0x09C2e333a38Fb35cf31c28B2c65b652F83cde108";
+export const WhoopTokenAddress = "0x151fceB3337B585A656C363529FC58178576F5fA";
