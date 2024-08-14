@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
 
     await caller.whoop.oauthCallback({ code, state });
 
-    return NextResponse.redirect(new URL("/", request.url));
+    return NextResponse.redirect(new URL("/dashboard", request.url));
   } catch (error) {
     console.error("Error in WHOOP callback:", error);
     return NextResponse.redirect(new URL("/error", request.url));
