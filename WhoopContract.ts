@@ -219,74 +219,6 @@ export const WhoopTokenAbi = [
     type: "event",
   },
   {
-    anonymous: false,
-    inputs: [
-      {
-        indexed: false,
-        internalType: "uint256",
-        name: "challengeId",
-        type: "uint256",
-      },
-      {
-        indexed: false,
-        internalType: "bool",
-        name: "targetReached",
-        type: "bool",
-      },
-    ],
-    name: "SelfChallengeCompleted",
-    type: "event",
-  },
-  {
-    anonymous: false,
-    inputs: [
-      {
-        indexed: false,
-        internalType: "uint256",
-        name: "challengeId",
-        type: "uint256",
-      },
-      {
-        indexed: false,
-        internalType: "address",
-        name: "user",
-        type: "address",
-      },
-      {
-        indexed: false,
-        internalType: "uint256",
-        name: "startTime",
-        type: "uint256",
-      },
-      {
-        indexed: false,
-        internalType: "uint256",
-        name: "endTime",
-        type: "uint256",
-      },
-      {
-        indexed: false,
-        internalType: "enum WhoopieChallengeContract.ChallengeStatus",
-        name: "status",
-        type: "uint8",
-      },
-      {
-        indexed: false,
-        internalType: "enum WhoopieChallengeContract.ChallengeType",
-        name: "challengeType",
-        type: "uint8",
-      },
-      {
-        indexed: false,
-        internalType: "uint256",
-        name: "challengeTarget",
-        type: "uint256",
-      },
-    ],
-    name: "SelfChallengeCreated",
-    type: "event",
-  },
-  {
     inputs: [
       {
         internalType: "uint256",
@@ -1156,73 +1088,6 @@ export const WhoopTokenAbi = [
     type: "function",
   },
   {
-    inputs: [],
-    name: "selfChallengeCounter",
-    outputs: [
-      {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
-    ],
-    name: "selfChallenges",
-    outputs: [
-      {
-        internalType: "uint256",
-        name: "challengeId",
-        type: "uint256",
-      },
-      {
-        internalType: "address",
-        name: "user",
-        type: "address",
-      },
-      {
-        internalType: "uint256",
-        name: "startTime",
-        type: "uint256",
-      },
-      {
-        internalType: "uint256",
-        name: "endTime",
-        type: "uint256",
-      },
-      {
-        internalType: "enum WhoopieChallengeContract.ChallengeStatus",
-        name: "status",
-        type: "uint8",
-      },
-      {
-        internalType: "enum WhoopieChallengeContract.ChallengeType",
-        name: "challengeType",
-        type: "uint8",
-      },
-      {
-        internalType: "uint256",
-        name: "challengeTarget",
-        type: "uint256",
-      },
-      {
-        internalType: "bool",
-        name: "targetReached",
-        type: "bool",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
     inputs: [
       {
         internalType: "address",
@@ -1303,4 +1168,4 @@ export const WhoopTokenAbi = [
   },
 ];
 
-export const WhoopTokenAddress = "0xF2bC81f7C336E815f51166B4d70f1FA4C151101c";
+export const WhoopTokenAddress = "0xFf6d044f0606Ccb4664498Ddb708B7Dc1FFFeb43";

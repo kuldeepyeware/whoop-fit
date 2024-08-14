@@ -1,4 +1,5 @@
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-floating-promises */
+
 "use client";
 
 import { usePrivy } from "@privy-io/react-auth";
@@ -20,16 +21,19 @@ import Link from "next/link";
 import { useToast } from "@/app/_components/ui/use-toast";
 import { encodeFunctionData } from "viem";
 import { tokenAbi, tokenAddress } from "TokenContract";
+import { Button } from "@/app/_components/ui/button";
+import { useRouter } from "next/navigation";
 
 const isZeroAddress = (address: string) =>
   address === "0x0000000000000000000000000000000000000000";
 
 const ChallengePage = ({ params }: { params: { id: string } }) => {
-  const { user, login, authenticated } = usePrivy();
+  const { user, authenticated, ready } = usePrivy();
   const [challenge, setChallenge] = useState<Challenge | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [isInvalidChallenge, setIsInvalidChallenge] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isReady, setIsReady] = useState(false);
+  const router = useRouter();
 
   const { data: challengeData, refetch: refetchData } = useReadContract({
     address: WhoopTokenAddress,
@@ -44,24 +48,69 @@ const ChallengePage = ({ params }: { params: { id: string } }) => {
   const { toast } = useToast();
 
   useEffect(() => {
-    if (challengeData && smartAccountReady) {
-      const typedChallengeData = challengeData as Challenge;
-      if (
-        !isZeroAddress(typedChallengeData?.challenger)
-        // &&  typedChallengeData?.challenged === smartAccountAddress
-      ) {
-        setChallenge(challengeData as Challenge);
-        setIsInvalidChallenge(false);
-      } else {
+    const initialize = async () => {
+      if (challengeData === undefined) {
         setIsInvalidChallenge(true);
+        setIsReady(true);
+        return;
       }
-      setIsLoading(false);
-    } else {
-      // setIsInvalidChallenge(true);
-      console.log("ener 3");
-      setIsLoading(false);
-    }
-  }, [challengeData, smartAccountReady, smartAccountAddress]);
+
+      if (challengeData && (!authenticated || smartAccountReady)) {
+        const typedChallengeData = challengeData as Challenge;
+        const isZeroChallenger = isZeroAddress(typedChallengeData?.challenger);
+        const isInvalidChallenged =
+          authenticated &&
+          smartAccountReady &&
+          smartAccountAddress &&
+          typedChallengeData?.challenged !== smartAccountAddress;
+
+        if (isZeroChallenger || isInvalidChallenged) {
+          setIsInvalidChallenge(true);
+        } else {
+          setChallenge(typedChallengeData);
+          setIsInvalidChallenge(false);
+        }
+        setIsReady(true);
+      }
+    };
+
+    initialize();
+  }, [challengeData, authenticated, smartAccountReady, smartAccountAddress]);
+
+  if (!isReady || !ready) {
+    return (
+      <div className="flex h-[calc(100vh-4rem)] items-center justify-center">
+        <div className="text-center">
+          <div className="mx-auto h-16 w-16 animate-spin rounded-full border-b-2 border-gray-900"></div>
+          <p className="mt-4 text-xl font-semibold">Loading challenge...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isInvalidChallenge) {
+    return (
+      <div className="flex h-[calc(100vh-4rem)] items-center justify-center px-4 py-12">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle className="text-center text-xl">
+              Invalid Challenge
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="text-center">
+            The challenge you are trying to view is not valid
+          </CardContent>
+          <CardFooter className="flex justify-center">
+            <Link href="/" passHref>
+              <p className="inline-flex items-center justify-center rounded-md bg-blue-500 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-600">
+                Back to Home
+              </p>
+            </Link>
+          </CardFooter>
+        </Card>
+      </div>
+    );
+  }
 
   const handleAccept = async () => {
     if (!user) {
@@ -71,18 +120,26 @@ const ChallengePage = ({ params }: { params: { id: string } }) => {
       return;
     }
 
+    if (!smartAccountReady || !smartAccountAddress) {
+      toast({
+        title: "Smart account is not ready",
+        description: "Please wait for the smart account to initialize",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (challenge?.challenged !== smartAccountAddress) {
+      toast({
+        title: "This challenge is not created for you",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const startTime = BigInt(Math.floor(Date.now() / 1000));
 
     if (challenge?.isTwoSided) {
-      if (!smartAccountReady || !smartAccountAddress) {
-        toast({
-          title: "Smart account is not ready",
-          description: "Please wait for the smart account to initialize",
-          variant: "destructive",
-        });
-        return;
-      }
-
       setIsProcessing(true);
 
       const approveTokencallData = encodeFunctionData({
@@ -138,6 +195,14 @@ const ChallengePage = ({ params }: { params: { id: string } }) => {
         toast({
           title: "Smart account is not ready",
           description: "Please wait for the smart account to initialize",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (challenge?.challenged !== smartAccountAddress) {
+        toast({
+          title: "This challenge is not created for you",
           variant: "destructive",
         });
         return;
@@ -199,6 +264,14 @@ const ChallengePage = ({ params }: { params: { id: string } }) => {
       return;
     }
 
+    if (challenge?.challenged !== smartAccountAddress) {
+      toast({
+        title: "This challenge is not created for you",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsProcessing(true);
 
     const rejectChallengecallData = encodeFunctionData({
@@ -237,41 +310,6 @@ const ChallengePage = ({ params }: { params: { id: string } }) => {
     }
   };
 
-  if (isLoading || (authenticated && !smartAccountReady)) {
-    return (
-      <div className="flex h-[calc(100vh-4rem)] items-center justify-center">
-        <div className="text-center">
-          <div className="mx-auto h-16 w-16 animate-spin rounded-full border-b-2 border-gray-900"></div>
-          <p className="mt-4 text-xl font-semibold">Loading challenge...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (isInvalidChallenge) {
-    return (
-      <div className="flex h-[calc(100vh-4rem)] items-center justify-center px-4 py-12">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle className="text-center text-xl">
-              Invalid Challenge
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="text-center">
-            The challenge you are trying to view is not valid
-          </CardContent>
-          <CardFooter className="flex justify-center">
-            <Link href="/" passHref>
-              <p className="inline-flex items-center justify-center rounded-md bg-blue-500 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-600">
-                Back to Home
-              </p>
-            </Link>
-          </CardFooter>
-        </Card>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gray-100 px-4 py-12 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-md overflow-hidden rounded-xl bg-white shadow-md md:max-w-2xl">
@@ -309,7 +347,7 @@ const ChallengePage = ({ params }: { params: { id: string } }) => {
             </div>
             {user ? (
               <div className="mt-6 flex justify-between">
-                <button
+                <Button
                   onClick={handleAccept}
                   disabled={isProcessing}
                   className={`flex items-center rounded px-4 py-2 font-bold text-white ${
@@ -320,8 +358,8 @@ const ChallengePage = ({ params }: { params: { id: string } }) => {
                 >
                   <CheckIcon className="mr-2 h-4 w-4" />
                   {isProcessing ? "Processing..." : "Accept"}
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={handleReject}
                   className={`flex items-center rounded px-4 py-2 font-bold text-white ${
                     isProcessing ? "bg-red-400" : "bg-red-500 hover:bg-red-600"
@@ -329,17 +367,19 @@ const ChallengePage = ({ params }: { params: { id: string } }) => {
                 >
                   <XIcon className="mr-2 h-4 w-4" />
                   {isProcessing ? "Processing..." : "Accept"}
-                </button>
+                </Button>
               </div>
             ) : (
               <div className="mt-6">
-                <button
-                  onClick={login}
+                <Button
+                  onClick={() => {
+                    router.push("/login");
+                  }}
                   className="flex w-full items-center justify-center rounded bg-indigo-500 px-4 py-2 font-bold text-white hover:bg-indigo-600"
                 >
                   <LockIcon className="mr-2 h-4 w-4" />
                   Log In to Respond
-                </button>
+                </Button>
               </div>
             )}
           </div>

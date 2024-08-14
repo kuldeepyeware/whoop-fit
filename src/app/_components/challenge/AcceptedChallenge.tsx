@@ -62,10 +62,33 @@ const AcceptedChallenge: React.FC<AcceptedChallengeProps> = ({
       },
     });
 
+  const { mutateAsync: updateTargetMutation1v1, isPending: Pending1v1 } =
+    api.user.update1v1ChallengeStatus.useMutation({
+      onSuccess: async () => {
+        toast({
+          title: "Result Evaluated successfully!",
+        });
+
+        setCheckingResultId(null);
+
+        await render();
+      },
+      onError: async () => {
+        toast({
+          title: "Something went wrong, Please try again later!",
+        });
+        setCheckingResultId(null);
+      },
+    });
+
   const handleClaim = async (challenge: Challenge) => {
     setCheckingResultId(challenge.challengeId);
     if (Number(challenge.status) == 1) {
-      await updateTargetMutation(challenge);
+      if (challenge.isTwoSided) {
+        await updateTargetMutation1v1(challenge);
+      } else {
+        await updateTargetMutation(challenge);
+      }
     } else {
       await render();
     }
@@ -142,7 +165,7 @@ const AcceptedChallenge: React.FC<AcceptedChallengeProps> = ({
                           onClick={() => handleClaim(challenge)}
                           variant="default"
                           className="w-full bg-green-500 text-white transition-colors hover:bg-green-600"
-                          disabled={isPending}
+                          disabled={isPending || Pending1v1}
                         >
                           {checkingResultId === challenge.challengeId
                             ? "Updating..."

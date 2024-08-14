@@ -122,10 +122,12 @@ interface ProfileDataRecovery {
 
 interface ProfileUserData {
   smartAccountAddress: string | null;
+  id?: string | null;
   whoopProfile: {
     email: string;
     firstName: string;
     lastName: string;
+    userId?: string;
   }[];
   whoopWorkouts: ProfileDataWorkout[];
   whoopRecoveries: ProfileDataRecovery[];

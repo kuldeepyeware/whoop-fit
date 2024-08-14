@@ -9,13 +9,13 @@ datasource db {
 }
 
 model User {
-  id String @id @default(cuid())
+  id String @id @default(cuid()) @unique
 
   name                String?
   email               String? @unique
   privyId             String  @unique
-  embeddedAddress     String?
-  smartAccountAddress String?
+  embeddedAddress     String? @unique
+  smartAccountAddress String? @unique
 
   whoopUserId       String?   @unique
   whoopAccessToken  String?

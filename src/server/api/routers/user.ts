@@ -355,6 +355,185 @@ export const userRouter = createTRPCRouter({
       }
     }),
 
+  update1v1ChallengeStatus: protectedProcedure
+    .input(
+      z.object({
+        challengeId: z.bigint(),
+        challenger: z.string(),
+        challenged: z.string(),
+        tokenAddress: z.string(),
+        challengerAmount: z.bigint(),
+        startTime: z.bigint(),
+        endTime: z.bigint(),
+        status: z.number(),
+        challengeType: z.number(),
+        challengeTarget: z.bigint(),
+        isTwoSided: z.boolean(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const {
+        challengeId,
+        challenger,
+        challenged,
+        startTime,
+        endTime,
+        challengeType,
+        challengeTarget,
+      } = input;
+
+      const challengerData = await ctx.db.user.findUnique({
+        where: { smartAccountAddress: challenger },
+        select: {
+          whoopWorkouts: true,
+          whoopRecoveries: true,
+          whoopSleeps: true,
+        },
+      });
+
+      const challengedData = await ctx.db.user.findUnique({
+        where: { smartAccountAddress: challenged },
+        select: {
+          whoopWorkouts: true,
+          whoopRecoveries: true,
+          whoopSleeps: true,
+        },
+      });
+
+      if (!challengerData || !challengedData) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "One or both users not found",
+        });
+      }
+
+      const challengeStartTime = new Date(Number(startTime) * 1000);
+      const challengeEndTime = new Date(Number(endTime) * 1000);
+
+      const isWithinChallengePeriod = (date: Date) => {
+        return date >= challengeStartTime && date <= challengeEndTime;
+      };
+
+      const challengeDurationDays =
+        (challengeEndTime.getTime() - challengeStartTime.getTime()) /
+        (1000 * 60 * 60 * 24);
+
+      let challengerAverage = 0;
+      let challengedAverage = 0;
+
+      const calculateAverage = (userData: typeof challengerData) => {
+        switch (challengeType) {
+          case 0: // Calories
+            return (
+              userData.whoopWorkouts
+                .filter(
+                  (workout) =>
+                    isWithinChallengePeriod(new Date(workout.end)) &&
+                    workout.scoreState === "SCORED",
+                )
+                .reduce(
+                  (sum, workout) => sum + workout.kilojoule * 0.239006,
+                  0,
+                ) / challengeDurationDays
+            );
+          case 1: // Strain
+            return (
+              userData.whoopWorkouts
+                .filter(
+                  (workout) =>
+                    isWithinChallengePeriod(new Date(workout.end)) &&
+                    workout.scoreState === "SCORED",
+                )
+                .reduce((sum, workout) => sum + workout.strain, 0) /
+              challengeDurationDays
+            );
+          case 2: // Hours of Sleep
+            return (
+              userData.whoopSleeps
+                .filter(
+                  (sleep) =>
+                    isWithinChallengePeriod(new Date(sleep.end)) &&
+                    sleep.scoreState === "SCORED" &&
+                    !sleep.nap,
+                )
+                .reduce(
+                  (sum, sleep) => sum + sleep.totalInBedTimeMilli / 3600000,
+                  0,
+                ) / challengeDurationDays
+            );
+          case 3: // Recovery
+            return (
+              userData.whoopRecoveries
+                .filter(
+                  (recovery) =>
+                    isWithinChallengePeriod(
+                      new Date(recovery.updatedAtByWhoop),
+                    ) &&
+                    recovery.scoreState === "SCORED" &&
+                    !recovery.userCalibrating,
+                )
+                .reduce((sum, recovery) => sum + recovery.recoveryScore, 0) /
+              challengeDurationDays
+            );
+          default:
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: "Invalid challenge type",
+            });
+        }
+      };
+
+      challengerAverage = calculateAverage(challengerData);
+      challengedAverage = calculateAverage(challengedData);
+
+      const challengerDifference = Math.abs(
+        Number(challengeTarget) - challengerAverage,
+      );
+      const challengedDifference = Math.abs(
+        Number(challengeTarget) - challengedAverage,
+      );
+
+      // const targetReached = challengerDifference <= challengedDifference;
+      const targetReached = challengedDifference < challengerDifference;
+
+      try {
+        const privateKey = env.PRIVATE_KEY;
+        const provider = new ethers.JsonRpcProvider(env.RPC_URL);
+        const wallet = new ethers.Wallet(privateKey, provider);
+
+        const contract = new ethers.Contract(
+          WhoopTokenAddress,
+          WhoopTokenAbi,
+          wallet,
+        );
+
+        if (contract) {
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          const tx = await contract.updateTargetStatus(
+            challengeId,
+            targetReached,
+          );
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+          await tx.wait();
+        } else {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Update Target Status function not available",
+          });
+        }
+
+        return { success: true, id: challengeId, targetReached };
+      } catch (error) {
+        console.error("Blockchain transaction failed:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to update challenge status",
+        });
+      }
+    }),
+
   getAverageMetric: protectedProcedure
     .input(
       z.object({

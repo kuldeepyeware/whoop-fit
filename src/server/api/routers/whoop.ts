@@ -300,11 +300,13 @@ export const whoopRouter = createTRPCRouter({
       where: { privyId: ctx.privyUserId },
       select: {
         smartAccountAddress: true,
+        id: true,
         whoopProfile: {
           select: {
             firstName: true,
             lastName: true,
             email: true,
+            userId: true,
           },
         },
         whoopWorkouts: {
@@ -354,16 +356,16 @@ export const whoopRouter = createTRPCRouter({
     return user;
   }),
 
-  getWhoopPublicProfileData: protectedProcedure
+  getWhoopPublicProfileData: publicProcedure
     .input(
       z.object({
-        privyId: z.string().min(1, "Privy ID is required"),
+        id: z.string().min(1, "ID is required"),
       }),
     )
     .query(async ({ input }) => {
-      const { privyId } = input;
+      const { id } = input;
       const user = await db.user.findUnique({
-        where: { privyId },
+        where: { id },
         select: {
           smartAccountAddress: true,
           whoopProfile: {
@@ -371,6 +373,7 @@ export const whoopRouter = createTRPCRouter({
               firstName: true,
               lastName: true,
               email: true,
+              userId: true,
             },
           },
           whoopWorkouts: {
@@ -428,4 +431,20 @@ export const whoopRouter = createTRPCRouter({
 
     return { isConnected: !!user?.whoopAccessToken };
   }),
+
+  checkPublicWhoopConnection: publicProcedure
+    .input(
+      z.object({
+        id: z.string().min(1, "ID is required"),
+      }),
+    )
+    .query(async ({ input }) => {
+      const { id } = input;
+      const user = await db.user.findUnique({
+        where: { id },
+        select: { whoopAccessToken: true },
+      });
+
+      return { isConnected: !!user?.whoopAccessToken };
+    }),
 });

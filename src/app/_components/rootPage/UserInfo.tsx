@@ -2,17 +2,25 @@
 
 import { Button } from "../ui/button";
 import { Card } from "../ui/card";
-import { Copy, CopyCheck, UserCircle } from "lucide-react";
+import {
+  Copy,
+  CopyCheck,
+  CopyCheckIcon,
+  ShareIcon,
+  UserCircle,
+} from "lucide-react";
 import { api } from "@/trpc/react";
 import { useState, useEffect } from "react";
 import ProfileSkeleton from "../skeleton/ProfileSkeleton";
 import { useAuth } from "@/hooks/authHook";
 import type { ProfileUserData } from "@/schemas/types/whoopDataTypes";
+import { env } from "@/env";
 
 const UserInfo = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [whoopData, setWhoopData] = useState<ProfileUserData | null>(null);
   const [copied, setCopied] = useState(false);
+  const [copiedProfile, setCopiedProfile] = useState(false);
 
   const { authenticated, walletReady } = useAuth();
 
@@ -30,6 +38,17 @@ const UserInfo = () => {
       await navigator.clipboard.writeText(smartAccountAddress);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy:", err);
+    }
+  };
+
+  const handleCopyProfile = async (id: string) => {
+    try {
+      const link = `${env.NEXT_PUBLIC_DOMAIN_URL}profile/${id}`;
+      await navigator.clipboard.writeText(link);
+      setCopiedProfile(true);
+      setTimeout(() => setCopiedProfile(false), 2000);
     } catch (err) {
       console.error("Failed to copy:", err);
     }
@@ -63,6 +82,19 @@ const UserInfo = () => {
             <h2 className="text-xl font-bold md:text-2xl">
               Your Whoop Profile
             </h2>
+            <Button onClick={() => handleCopyProfile(whoopData?.id ?? "")}>
+              {copiedProfile ? (
+                <>
+                  <CopyCheckIcon className="mr-2 h-5 w-5" />
+                  Copied
+                </>
+              ) : (
+                <>
+                  <ShareIcon className="mr-2 h-5 w-5" />
+                  Copy Profile Link{" "}
+                </>
+              )}
+            </Button>
           </div>
           <div className="mt-6 grid gap-6 md:grid-cols-[200px_1fr]">
             {authenticated && (

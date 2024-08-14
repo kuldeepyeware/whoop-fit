@@ -208,7 +208,9 @@ const Users = () => {
     if (!selectedUser?.smartAccountAddress) {
       toast({
         title: "No user selected or user has no default address",
+        variant: "destructive",
       });
+
       return;
     }
 
