@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -11,16 +12,15 @@ import {
 import { Badge } from "@/app/_components/ui/badge";
 import { type Challenge } from "@/schemas/types/challengeTypes";
 import {
-  formatTimeRemaining,
+  // formatTimeRemaining,
   getBadgeVariant,
   getChallengeTypeString,
 } from "@/lib/challenge";
-import { ClockIcon } from "lucide-react";
+// import { ClockIcon } from "lucide-react";
 import ChallengeCardSkeleton from "../skeleton/ChallengeCardSkeleton";
 
 type RejectedChallengeProps = {
   rejectedChallengeData: any;
-
   isLoading: any;
 };
 
@@ -39,6 +39,7 @@ const RejectedChallenge: React.FC<RejectedChallengeProps> = ({
   if (isLoading) {
     return <ChallengeCardSkeleton />;
   }
+
   return (
     <section>
       <CardHeader>
@@ -71,10 +72,10 @@ const RejectedChallenge: React.FC<RejectedChallengeProps> = ({
                     </p>
                     <p className="text-sm text-gray-600">
                       <span className="font-semibold">Amount:</span>{" "}
-                      {challenge.challengerAmount.toString()}
+                      {challenge.challengerAmount.toString()} USDC
                     </p>
                     <p className="text-sm text-gray-600">
-                      <span className="font-semibold">Two Sided:</span>{" "}
+                      <span className="font-semibold">1v1:</span>{" "}
                       {challenge.isTwoSided ? "Yes" : "No"}
                     </p>
                     {challenge.status == (4 || 3) && (
@@ -83,11 +84,10 @@ const RejectedChallenge: React.FC<RejectedChallengeProps> = ({
                         {challenge.targetReached ? "Yes" : "No"}
                       </p>
                     )}
-                    <p className="text-sm text-gray-600">
+                    {/* <p className="text-sm text-gray-600">
                       <ClockIcon className="mr-1 inline-block h-4 w-4 text-gray-500" />
                       {formatTimeRemaining(challenge.endTime)}
-                    </p>
-
+                    </p> */}
                     <p className="text-sm text-gray-600">
                       <span className="font-semibold">Challenger:</span>{" "}
                       {challenge.challenger.slice(0, 6)}...

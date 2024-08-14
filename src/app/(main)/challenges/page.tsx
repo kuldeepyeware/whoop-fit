@@ -5,11 +5,12 @@ import CreatedChallenge from "@/app/_components/challenge/CreatedChallenge";
 import EndedChallenge from "@/app/_components/challenge/EndedChallenge";
 import PendingChallenge from "@/app/_components/challenge/PendingChallenge";
 import RejectedChallenge from "@/app/_components/challenge/RejectedChallenge";
-import { useAccount, useReadContract } from "wagmi";
+import { useSmartAccount } from "@/hooks/smartAccountContext";
+import { useReadContract } from "wagmi";
 import { WhoopTokenAbi, WhoopTokenAddress } from "WhoopContract";
 
 const Challenges = () => {
-  const { address } = useAccount();
+  const { smartAccountAddress } = useSmartAccount();
 
   const {
     data: pendingChallengesData,
@@ -19,7 +20,7 @@ const Challenges = () => {
     address: WhoopTokenAddress,
     abi: WhoopTokenAbi,
     functionName: "getPendingChallengesForUser",
-    args: [address],
+    args: [smartAccountAddress],
   });
 
   const {
@@ -30,7 +31,7 @@ const Challenges = () => {
     address: WhoopTokenAddress,
     abi: WhoopTokenAbi,
     functionName: "getAcceptedChallengesBy",
-    args: [address],
+    args: [smartAccountAddress],
   });
 
   const {
@@ -41,7 +42,7 @@ const Challenges = () => {
     address: WhoopTokenAddress,
     abi: WhoopTokenAbi,
     functionName: "getChallengesCreatedBy",
-    args: [address],
+    args: [smartAccountAddress],
   });
 
   const {
@@ -52,7 +53,7 @@ const Challenges = () => {
     address: WhoopTokenAddress,
     abi: WhoopTokenAbi,
     functionName: "getRejectedChallengesBy",
-    args: [address],
+    args: [smartAccountAddress],
   });
 
   const {
@@ -63,7 +64,7 @@ const Challenges = () => {
     address: WhoopTokenAddress,
     abi: WhoopTokenAbi,
     functionName: "getEndedChallengesForUser",
-    args: [address],
+    args: [smartAccountAddress],
   });
 
   return (

@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+
 import { type NextRequest, NextResponse } from "next/server";
 import { createCaller } from "@/server/api/root";
 import { createTRPCContext } from "@/server/api/trpc";
@@ -15,7 +17,17 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const ctx = await createTRPCContext({ headers: request.headers });
+    const decodedState = JSON.parse(Buffer.from(state, "base64").toString());
+    const { privyUserId } = decodedState;
+
+    if (!privyUserId) {
+      throw new Error("No Privy user ID in state");
+    }
+
+    const ctx = await createTRPCContext({
+      headers: request.headers,
+      privyUserId,
+    });
 
     const caller = createCaller(ctx);
 

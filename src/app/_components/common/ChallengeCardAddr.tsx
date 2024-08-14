@@ -1,4 +1,4 @@
-/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable @typescript-eslint/await-thenable */
 
 "use client";
 
@@ -8,17 +8,16 @@ import {
   getChallengeTypeString,
 } from "@/lib/challenge";
 import { type Challenge } from "@/schemas/types/challengeTypes";
-import {
-  useReadContract,
-  useWaitForTransactionReceipt,
-  useWriteContract,
-} from "wagmi";
+import { useReadContract } from "wagmi";
 import { WhoopTokenAbi, WhoopTokenAddress } from "WhoopContract";
 import { Badge } from "../ui/badge";
 import { Card } from "../ui/card";
 import { ClockIcon } from "lucide-react";
-import { useEffect } from "react";
 import { useToast } from "../ui/use-toast";
+import { useSmartAccount } from "@/hooks/smartAccountContext";
+import { encodeFunctionData } from "viem";
+import { useState } from "react";
+import { Button } from "../ui/button";
 
 type ChallengeCardProps = {
   challenge: Challenge;
@@ -31,6 +30,11 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
   address,
   onClaimComplete,
 }) => {
+  const [isPending, setIsPending] = useState(false);
+
+  const { smartAccountAddress, smartAccountReady, sendUserOperation } =
+    useSmartAccount();
+
   const { toast } = useToast();
 
   const { data: winnerAddress } = useReadContract({
@@ -40,35 +44,51 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
     args: [challenge.challengeId],
   });
 
-  const {
-    data: claimHash,
-    isPending,
-    writeContractAsync: claimChallenge,
-  } = useWriteContract({});
-
-  const { isSuccess, isLoading: isClaimLoading } = useWaitForTransactionReceipt(
-    {
-      hash: claimHash,
-    },
-  );
-
   const handleClaim = async (challenge: Challenge) => {
-    await claimChallenge({
-      address: WhoopTokenAddress,
+    if (!smartAccountReady || !smartAccountAddress) {
+      toast({
+        title: "Smart account is not ready",
+        description: "Please wait for the smart account to initialize",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsPending(true);
+
+    const callData = encodeFunctionData({
       abi: WhoopTokenAbi,
       functionName: "claim",
       args: [challenge.challengeId],
     });
-  };
 
-  useEffect(() => {
-    if (isSuccess) {
+    try {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      await sendUserOperation({
+        to: WhoopTokenAddress,
+        data: callData,
+      });
+
       toast({
-        title: "Claim Rewarded Successfully!",
+        title: "Claim Rewarded successfully!",
+      });
+
+      setIsPending(false);
+
+      await onClaimComplete();
+    } catch (error) {
+      console.error("Error sending transaction:", error);
+
+      setIsPending(false);
+
+      toast({
+        title: "Error while claiming reward",
+        description: "Please try again",
+        variant: "destructive",
       });
     }
-    onClaimComplete();
-  }, [isSuccess]);
+  };
 
   return (
     <Card className="mb-4 w-[320px] rounded-lg border border-gray-200 bg-white p-6 shadow-md transition-shadow duration-300 hover:shadow-lg">
@@ -91,10 +111,10 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
           </p>
           <p className="text-sm text-gray-600">
             <span className="font-semibold">Amount:</span>{" "}
-            {challenge.challengerAmount.toString()}
+            {challenge.challengerAmount.toString()} USDC
           </p>
           <p className="text-sm text-gray-600">
-            <span className="font-semibold">Two Sided:</span>{" "}
+            <span className="font-semibold">1v1:</span>{" "}
             {challenge.isTwoSided ? "Yes" : "No"}
           </p>
           {challenge.status == (4 || 3) && (
@@ -132,13 +152,13 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
         </div>
 
         {address === winnerAddress && challenge.status == 3 && (
-          <button
+          <Button
             onClick={() => handleClaim(challenge)}
-            disabled={isPending || isClaimLoading}
+            disabled={isPending}
             className="mt-2 w-full rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600"
           >
-            {isPending || isClaimLoading ? "Claiming" : "Claim Reward"}
-          </button>
+            {isPending ? "Claiming" : "Claim Reward"}
+          </Button>
         )}
       </div>
     </Card>

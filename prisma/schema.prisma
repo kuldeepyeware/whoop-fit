@@ -1,66 +1,198 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
-  // NOTE: When using mysql or sqlserver, uncomment the @db.Text annotations in model Account below
-  // Further reading:
-  // https://next-auth.js.org/adapters/prisma#create-the-prisma-schema
-  // https://www.prisma.io/docs/reference/api-reference/prisma-schema-reference#string
+  provider  = "postgresql"
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_DATABASE_URL")
 }
 
-// Necessary for Next auth
-model Account {
-  id                       String  @id @default(cuid())
-  userId                   String
-  type                     String
-  provider                 String
-  providerAccountId        String
-  refresh_token            String? // @db.Text
-  access_token             String? // @db.Text
-  expires_at               Int?
-  token_type               String?
-  scope                    String?
-  id_token                 String? // @db.Text
-  session_state            String?
-  user                     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  refresh_token_expires_in Int?
-
-  @@unique([provider, providerAccountId])
-}
-
 model User {
-  id                String    @id @default(cuid())
-  name              String?
-  email             String?   @unique
-  password          String?
-  emailVerified     DateTime?
-  image             String?
+  id String @id @default(cuid())
+
+  name                String?
+  email               String? @unique
+  privyId             String  @unique
+  embeddedAddress     String?
+  smartAccountAddress String?
+
   whoopUserId       String?   @unique
   whoopAccessToken  String?
   whoopRefreshToken String?
   whoopTokenExpiry  DateTime?
-  whoopProfile         Json?
-  whoopWorkouts        Json?
-  whoopRecoveries      Json?
-  whoopSleep           Json?
-  whoopCycles          Json?
-  whoopBodyMeasurement Json?
-  defaultAddress      String?
-  accounts          Account[]
+
+  whoopCycles           Cycle[]
+  whoopSleeps           Sleep[]
+  whoopRecoveries       Recovery[]
+  whoopWorkouts         Workout[]
+  whoopBodyMeasurements BodyMeasurement[]
+  whoopProfile          WhoopProfile[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
-model VerificationToken {
-  id      String   @id @default(cuid())
-  email   String
-  token   String   @unique
-  expires DateTime
+model Cycle {
+  id     String @id @default(cuid())
+  userId String
 
-  @@unique([email, token])
+  cycleId String @unique
+
+  createdAtByWhoop DateTime
+  updatedAtByWhoop DateTime
+  start            DateTime
+  end              DateTime?
+  timezoneOffset   String
+  scoreState       String
+  strain           Float
+  kilojoule        Float
+  averageHeartRate Int
+  maxHeartRate     Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [whoopUserId], onDelete: Cascade)
+}
+
+model Sleep {
+  id     String @id @default(cuid())
+  userId String
+
+  sleepId String @unique
+
+  createdAtByWhoop            DateTime
+  updatedAtByWhoop            DateTime
+  start                       DateTime
+  end                         DateTime
+  timezoneOffset              String
+  nap                         Boolean
+  scoreState                  String
+  totalInBedTimeMilli         Int
+  totalAwakeTimeMilli         Int
+  totalNoDataTimeMilli        Int
+  totalLightSleepTimeMilli    Int
+  totalSlowWaveSleepTimeMilli Int
+  totalRemSleepTimeMilli      Int
+  sleepCycleCount             Int
+  disturbanceCount            Int
+
+  baseline_milli_sleep_needed   Int
+  need_from_sleep_debt_milli    Int
+  need_from_recent_strain_milli Int
+  need_from_recent_nap_milli    Int
+
+  respiratoryRate            Float?
+  sleepPerformancePercentage Float?
+  sleepConsistencyPercentage Float?
+  sleepEfficiencyPercentage  Float?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [whoopUserId], onDelete: Cascade)
+}
+
+model Recovery {
+  id     String @id @default(cuid())
+  userId String
+
+  cycleId String @unique
+  sleepId String
+
+  createdAtByWhoop DateTime
+  updatedAtByWhoop DateTime
+  scoreState       String
+  userCalibrating  Boolean
+  recoveryScore    Float
+  restingHeartRate Float
+  hrvRmssd         Float
+  spo2Percentage   Float?
+  skinTempCelsius  Float?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [whoopUserId], onDelete: Cascade)
+}
+
+model Workout {
+  id     String @id @default(cuid())
+  userId String
+
+  workoutId String @unique
+
+  createdAtByWhoop    DateTime
+  updatedAtByWhoop    DateTime
+  start               DateTime
+  end                 DateTime
+  timezoneOffset      String
+  sportId             Int
+  scoreState          String
+  strain              Float
+  averageHeartRate    Int
+  maxHeartRate        Int
+  kilojoule           Float
+  percentRecorded     Float
+  distanceMeter       Float?
+  altitudeGainMeter   Float?
+  altitudeChangeMeter Float?
+  zeroMilli           Int?
+  oneMilli            Int?
+  twoMilli            Int?
+  threeMilli          Int?
+  fourMilli           Int?
+  fiveMilli           Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [whoopUserId], onDelete: Cascade)
+}
+
+model BodyMeasurement {
+  id     String @id @default(cuid())
+  userId String @unique
+
+  height       Float
+  weight       Float
+  maxHeartRate Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [whoopUserId], onDelete: Cascade)
+}
+
+model WhoopProfile {
+  id     String @id @default(cuid())
+  userId String @unique
+
+  email     String
+  firstName String
+  lastName  String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [whoopUserId], onDelete: Cascade)
+}
+
+model Webhook {
+  id String @id @default(cuid())
+
+  name String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Cron {
+  id String @id @default(cuid())
+
+  name String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

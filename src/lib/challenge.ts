@@ -15,7 +15,9 @@ type BadgeVariant =
   | "default";
 
 const getChallengeTypeString = (type: number) => {
-  const types = ["HRV", "Steps", "Sleep Score", "Workout Minutes"];
+  // const types = ["HRV", "Steps", "Sleep Score", "Workout Minutes"];
+  const types = ["Calories", "Strain", "Sleep Hours", "Recovery"];
+
   return types[type] ?? "Unknown";
 };
 
@@ -65,4 +67,21 @@ const getBadgeVariant = (status: ChallengeStatus): BadgeVariant => {
   }
 };
 
-export { getBadgeVariant, formatTimeRemaining, getChallengeTypeString };
+function getStartDateForLast7Days(): Date {
+  const now = new Date();
+  return new Date(now.setDate(now.getDate() - 7));
+}
+
+const getTomorrowDate = () => {
+  const today = new Date();
+  today.setDate(today.getDate() + 1);
+  return today.toISOString().split("T")[0];
+};
+
+export {
+  getBadgeVariant,
+  formatTimeRemaining,
+  getChallengeTypeString,
+  getStartDateForLast7Days,
+  getTomorrowDate,
+};

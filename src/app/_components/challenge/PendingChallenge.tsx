@@ -1,7 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable react-hooks/exhaustive-deps */
-/* eslint-disable @typescript-eslint/no-floating-promises */
 
 "use client";
 
@@ -14,7 +12,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/app/_components/ui/card";
-import { useWaitForTransactionReceipt, useWriteContract } from "wagmi";
 import {
   formatTimeRemaining,
   getBadgeVariant,
@@ -26,6 +23,9 @@ import { Button } from "../ui/button";
 import { tokenAbi, tokenAddress } from "TokenContract";
 import { useToast } from "../ui/use-toast";
 import ChallengeCardSkeleton from "../skeleton/ChallengeCardSkeleton";
+import { useAuth } from "@/hooks/authHook";
+import { useSmartAccount } from "@/hooks/smartAccountContext";
+import { encodeFunctionData } from "viem";
 
 type PendingChallengeProps = {
   pendingChallengesData: any;
@@ -49,70 +49,184 @@ const PendingChallenge: React.FC<PendingChallengeProps> = ({
   const [rejectingChallengeId, setRejectingChallengeId] = useState<
     bigint | null
   >(null);
+  const [isPending, setIsPending] = useState(false);
+
+  const { smartAccountReady, smartAccountAddress, sendUserOperation } =
+    useSmartAccount();
+
+  const { walletReady } = useAuth();
 
   const { toast } = useToast();
 
-  const {
-    data: acceptHash,
-    writeContract: acceptChallengeContract,
-    isPending: acceptingChallenge,
-  } = useWriteContract();
-
-  const {
-    data: rejectHash,
-    writeContract: rejectChallengeContract,
-    isPending: rejectingChallenge,
-  } = useWriteContract();
-
-  const {
-    data: approvalHash,
-    writeContract: approveToken,
-    isPending: approvingToken,
-  } = useWriteContract();
-
-  const { isSuccess: isProcessSuccess } = useWaitForTransactionReceipt({
-    hash: rejectHash ?? acceptHash,
-  });
-
-  const { isSuccess: isApprovalSuccess } = useWaitForTransactionReceipt({
-    hash: approvalHash,
-  });
-
-  const acceptChallenge = (challenge: Challenge) => {
+  const acceptChallenge = async (challenge: Challenge) => {
     setAcceptingChallengeId(challenge.challengeId);
     const startTime = BigInt(Math.floor(Date.now() / 1000));
+
     if (challenge.isTwoSided) {
-      approveToken({
-        address: tokenAddress,
+      if (!smartAccountReady || !smartAccountAddress) {
+        toast({
+          title: "Smart account is not ready",
+          description: "Please wait for the smart account to initialize",
+          variant: "destructive",
+        });
+        setRejectingChallengeId(null);
+        setAcceptingChallengeId(null);
+        return;
+      }
+
+      setIsPending(true);
+
+      const approveTokencallData = encodeFunctionData({
         abi: tokenAbi,
         functionName: "approve",
         args: [WhoopTokenAddress, BigInt(challenge.challengerAmount)],
       });
 
-      toast({
-        title: "Token approval initiated",
-        description: "Please confirm the transaction in your wallet.",
-      });
-    } else {
-      acceptChallengeContract({
-        address: WhoopTokenAddress,
+      const createChallengecallData = encodeFunctionData({
         abi: WhoopTokenAbi,
         functionName: "acceptChallenge",
         args: [challenge.challengeId, startTime],
       });
-      render();
+
+      try {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        await sendUserOperation({
+          to: tokenAddress,
+          data: approveTokencallData,
+        });
+
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        await sendUserOperation({
+          to: WhoopTokenAddress,
+          data: createChallengecallData,
+        });
+
+        toast({
+          title: "Accepted Challenge successfully!",
+        });
+
+        setRejectingChallengeId(null);
+        setAcceptingChallengeId(null);
+        setIsPending(false);
+
+        await render();
+      } catch (error) {
+        console.error("Error sending transaction:", error);
+
+        setRejectingChallengeId(null);
+        setAcceptingChallengeId(null);
+        setIsPending(false);
+        toast({
+          title: "Error while accepting challenge",
+          description:
+            "Make sure your account has enough USDC balance because this challenge involves both sides",
+          variant: "destructive",
+        });
+      }
+    } else {
+      if (!smartAccountReady || !smartAccountAddress) {
+        toast({
+          title: "Smart account is not ready",
+          description: "Please wait for the smart account to initialize",
+          variant: "destructive",
+        });
+        setRejectingChallengeId(null);
+        setAcceptingChallengeId(null);
+        return;
+      }
+
+      setIsPending(true);
+
+      const createChallengecallData = encodeFunctionData({
+        abi: WhoopTokenAbi,
+        functionName: "acceptChallenge",
+        args: [challenge.challengeId, startTime],
+      });
+
+      try {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        await sendUserOperation({
+          to: WhoopTokenAddress,
+          data: createChallengecallData,
+        });
+
+        toast({
+          title: "Accepted Challenge successfully!",
+        });
+
+        setRejectingChallengeId(null);
+        setAcceptingChallengeId(null);
+        setIsPending(false);
+
+        await render();
+      } catch (error) {
+        console.error("Error sending transaction:", error);
+
+        setRejectingChallengeId(null);
+        setAcceptingChallengeId(null);
+        setIsPending(false);
+
+        toast({
+          title: "Error while creating challenge",
+          description: "Please try again",
+          variant: "destructive",
+        });
+      }
     }
   };
 
-  const rejectChallenge = (challengeId: bigint) => {
+  const rejectChallenge = async (challengeId: bigint) => {
+    if (!smartAccountReady || !smartAccountAddress) {
+      toast({
+        title: "Smart account is not ready",
+        description: "Please wait for the smart account to initialize",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setRejectingChallengeId(challengeId);
-    rejectChallengeContract({
-      address: WhoopTokenAddress,
+    setIsPending(true);
+
+    const rejectChallengecallData = encodeFunctionData({
       abi: WhoopTokenAbi,
       functionName: "rejectChallenge",
       args: [challengeId],
     });
-    render();
+
+    try {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      await sendUserOperation({
+        to: WhoopTokenAddress,
+        data: rejectChallengecallData,
+      });
+
+      toast({
+        title: "Rejected Challenge successfully!",
+      });
+
+      setRejectingChallengeId(null);
+      setAcceptingChallengeId(null);
+      setIsPending(false);
+
+      await render();
+    } catch (error) {
+      console.error("Error sending transaction:", error);
+
+      setRejectingChallengeId(null);
+      setAcceptingChallengeId(null);
+      setIsPending(false);
+
+      toast({
+        title: "Error while rejecting challenge",
+        description: "Please try again",
+        variant: "destructive",
+      });
+    }
   };
 
   const render = async () => {
@@ -120,32 +234,6 @@ const PendingChallenge: React.FC<PendingChallengeProps> = ({
     await refetchAcceptedChallenges();
     await refetchRejectedChallenges();
   };
-
-  useEffect(() => {
-    if (isApprovalSuccess) {
-      toast({
-        title: "Token approval confirmed",
-        description: "Creating challenge...",
-      });
-
-      const startTime = BigInt(Math.floor(Date.now() / 1000));
-
-      acceptChallengeContract({
-        address: WhoopTokenAddress,
-        abi: WhoopTokenAbi,
-        functionName: "acceptChallenge",
-        args: [acceptingChallengeId, startTime],
-      });
-    }
-  }, [isApprovalSuccess]);
-
-  useEffect(() => {
-    if (isProcessSuccess) {
-      render();
-      setRejectingChallengeId(null);
-      setAcceptingChallengeId(null);
-    }
-  }, [isProcessSuccess]);
 
   useEffect(() => {
     if (pendingChallengesData) {
@@ -192,10 +280,10 @@ const PendingChallenge: React.FC<PendingChallengeProps> = ({
                     </p>
                     <p className="text-sm text-gray-600">
                       <span className="font-semibold">Amount:</span>{" "}
-                      {challenge.challengerAmount.toString()}
+                      {challenge.challengerAmount.toString()} USDC
                     </p>
                     <p className="text-sm text-gray-600">
-                      <span className="font-semibold">Two Sided:</span>{" "}
+                      <span className="font-semibold">1v1:</span>{" "}
                       {challenge.isTwoSided ? "Yes" : "No"}
                     </p>
                     <p className="text-sm text-gray-600">
@@ -213,21 +301,13 @@ const PendingChallenge: React.FC<PendingChallengeProps> = ({
                       onClick={() => acceptChallenge(challenge)}
                       variant="secondary"
                       size="sm"
-                      disabled={
-                        acceptingChallenge ||
-                        rejectingChallenge ||
-                        approvingToken
-                      }
+                      disabled={!walletReady || isPending}
                       className="bg-blue-500 text-white transition-colors hover:bg-blue-600"
                     >
                       <CheckIcon className="mr-1 h-4 w-4" />
                       <span>
                         {acceptingChallengeId === challenge.challengeId
-                          ? approvingToken
-                            ? "Approving..."
-                            : acceptingChallenge
-                              ? "Accepting..."
-                              : "Accept"
+                          ? "Accepting..."
                           : "Accept"}
                       </span>
                     </Button>
@@ -235,11 +315,7 @@ const PendingChallenge: React.FC<PendingChallengeProps> = ({
                       onClick={() => rejectChallenge(challenge.challengeId)}
                       variant="outline"
                       size="sm"
-                      disabled={
-                        rejectingChallenge ||
-                        acceptingChallenge ||
-                        approvingToken
-                      }
+                      disabled={!walletReady || isPending}
                       className="border-red-500 text-red-500 transition-colors hover:bg-red-50"
                     >
                       <XIcon className="mr-1 h-4 w-4" />

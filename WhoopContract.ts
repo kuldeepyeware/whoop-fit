@@ -2,24 +2,6 @@ export const WhoopTokenAbi = [
   {
     inputs: [
       {
-        internalType: "uint256",
-        name: "_challengeId",
-        type: "uint256",
-      },
-      {
-        internalType: "uint256",
-        name: "_startTime",
-        type: "uint256",
-      },
-    ],
-    name: "acceptChallenge",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
         internalType: "address",
         name: "initialOwner",
         type: "address",
@@ -48,6 +30,11 @@ export const WhoopTokenAbi = [
       },
     ],
     name: "OwnableUnauthorizedAccount",
+    type: "error",
+  },
+  {
+    inputs: [],
+    name: "ReentrancyGuardReentrantCall",
     type: "error",
   },
   {
@@ -169,98 +156,6 @@ export const WhoopTokenAbi = [
     type: "event",
   },
   {
-    inputs: [
-      {
-        internalType: "uint256",
-        name: "_challengeId",
-        type: "uint256",
-      },
-    ],
-    name: "claim",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
-        internalType: "address",
-        name: "_tokenAddress",
-        type: "address",
-      },
-    ],
-    name: "collectFees",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
-        internalType: "address",
-        name: "_challenged",
-        type: "address",
-      },
-      {
-        internalType: "address",
-        name: "_tokenAddress",
-        type: "address",
-      },
-      {
-        internalType: "uint256",
-        name: "_amount",
-        type: "uint256",
-      },
-      {
-        internalType: "uint256",
-        name: "_endTime",
-        type: "uint256",
-      },
-      {
-        internalType: "enum WhoopieChallengeContract.ChallengeType",
-        name: "_challengeType",
-        type: "uint8",
-      },
-      {
-        internalType: "uint256",
-        name: "_challengeTarget",
-        type: "uint256",
-      },
-      {
-        internalType: "bool",
-        name: "_isTwoSided",
-        type: "bool",
-      },
-    ],
-    name: "createChallenge",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
-        internalType: "uint256",
-        name: "_endTime",
-        type: "uint256",
-      },
-      {
-        internalType: "enum WhoopieChallengeContract.ChallengeType",
-        name: "_challengeType",
-        type: "uint8",
-      },
-      {
-        internalType: "uint256",
-        name: "_challengeTarget",
-        type: "uint256",
-      },
-    ],
-    name: "createSelfChallenge",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
     anonymous: false,
     inputs: [
       {
@@ -297,26 +192,6 @@ export const WhoopTokenAbi = [
     ],
     name: "OwnershipTransferred",
     type: "event",
-  },
-  {
-    inputs: [
-      {
-        internalType: "uint256",
-        name: "_challengeId",
-        type: "uint256",
-      },
-    ],
-    name: "rejectChallenge",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "renounceOwnership",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
   },
   {
     anonymous: false,
@@ -414,48 +289,17 @@ export const WhoopTokenAbi = [
   {
     inputs: [
       {
-        internalType: "address",
-        name: "newOwner",
-        type: "address",
-      },
-    ],
-    name: "transferOwnership",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
         internalType: "uint256",
         name: "_challengeId",
         type: "uint256",
       },
       {
-        internalType: "bool",
-        name: "_targetReached",
-        type: "bool",
-      },
-    ],
-    name: "updateSelfChallengeStatus",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
         internalType: "uint256",
-        name: "_challengeId",
+        name: "_startTime",
         type: "uint256",
       },
-      {
-        internalType: "bool",
-        name: "_targetReached",
-        type: "bool",
-      },
     ],
-    name: "updateTargetStatus",
+    name: "acceptChallenge",
     outputs: [],
     stateMutability: "nonpayable",
     type: "function",
@@ -487,6 +331,25 @@ export const WhoopTokenAbi = [
         internalType: "uint256",
         name: "",
         type: "uint256",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "uint256",
+        name: "",
+        type: "uint256",
+      },
+    ],
+    name: "challengeWinners",
+    outputs: [
+      {
+        internalType: "address",
+        name: "",
+        type: "address",
       },
     ],
     stateMutability: "view",
@@ -570,19 +433,69 @@ export const WhoopTokenAbi = [
     inputs: [
       {
         internalType: "uint256",
-        name: "",
+        name: "_challengeId",
         type: "uint256",
       },
     ],
-    name: "challengeWinners",
-    outputs: [
+    name: "claim",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
       {
         internalType: "address",
-        name: "",
+        name: "_tokenAddress",
         type: "address",
       },
     ],
-    stateMutability: "view",
+    name: "collectFees",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "_challenged",
+        type: "address",
+      },
+      {
+        internalType: "address",
+        name: "_tokenAddress",
+        type: "address",
+      },
+      {
+        internalType: "uint256",
+        name: "_amount",
+        type: "uint256",
+      },
+      {
+        internalType: "uint256",
+        name: "_endTime",
+        type: "uint256",
+      },
+      {
+        internalType: "enum WhoopieChallengeContract.ChallengeType",
+        name: "_challengeType",
+        type: "uint8",
+      },
+      {
+        internalType: "uint256",
+        name: "_challengeTarget",
+        type: "uint256",
+      },
+      {
+        internalType: "bool",
+        name: "_isTwoSided",
+        type: "bool",
+      },
+    ],
+    name: "createChallenge",
+    outputs: [],
+    stateMutability: "nonpayable",
     type: "function",
   },
   {
@@ -670,67 +583,6 @@ export const WhoopTokenAbi = [
     inputs: [
       {
         internalType: "address",
-        name: "_user",
-        type: "address",
-      },
-    ],
-    name: "getAcceptedSelfChallengesForUser",
-    outputs: [
-      {
-        components: [
-          {
-            internalType: "uint256",
-            name: "challengeId",
-            type: "uint256",
-          },
-          {
-            internalType: "address",
-            name: "user",
-            type: "address",
-          },
-          {
-            internalType: "uint256",
-            name: "startTime",
-            type: "uint256",
-          },
-          {
-            internalType: "uint256",
-            name: "endTime",
-            type: "uint256",
-          },
-          {
-            internalType: "enum WhoopieChallengeContract.ChallengeStatus",
-            name: "status",
-            type: "uint8",
-          },
-          {
-            internalType: "enum WhoopieChallengeContract.ChallengeType",
-            name: "challengeType",
-            type: "uint8",
-          },
-          {
-            internalType: "uint256",
-            name: "challengeTarget",
-            type: "uint256",
-          },
-          {
-            internalType: "bool",
-            name: "targetReached",
-            type: "bool",
-          },
-        ],
-        internalType: "struct WhoopieChallengeContract.SelfChallenge[]",
-        name: "",
-        type: "tuple[]",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
-        internalType: "address",
         name: "_tokenAddress",
         type: "address",
       },
@@ -741,6 +593,25 @@ export const WhoopTokenAbi = [
         internalType: "uint256",
         name: "",
         type: "uint256",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "uint256",
+        name: "_challengeId",
+        type: "uint256",
+      },
+    ],
+    name: "getChallengeWinner",
+    outputs: [
+      {
+        internalType: "address",
+        name: "",
+        type: "address",
       },
     ],
     stateMutability: "view",
@@ -830,25 +701,6 @@ export const WhoopTokenAbi = [
   {
     inputs: [
       {
-        internalType: "uint256",
-        name: "_challengeId",
-        type: "uint256",
-      },
-    ],
-    name: "getChallengeWinner",
-    outputs: [
-      {
-        internalType: "address",
-        name: "",
-        type: "address",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
         internalType: "address",
         name: "_user",
         type: "address",
@@ -920,67 +772,6 @@ export const WhoopTokenAbi = [
           },
         ],
         internalType: "struct WhoopieChallengeContract.Challenge[]",
-        name: "",
-        type: "tuple[]",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
-        internalType: "address",
-        name: "_user",
-        type: "address",
-      },
-    ],
-    name: "getEndedSelfChallengesForUser",
-    outputs: [
-      {
-        components: [
-          {
-            internalType: "uint256",
-            name: "challengeId",
-            type: "uint256",
-          },
-          {
-            internalType: "address",
-            name: "user",
-            type: "address",
-          },
-          {
-            internalType: "uint256",
-            name: "startTime",
-            type: "uint256",
-          },
-          {
-            internalType: "uint256",
-            name: "endTime",
-            type: "uint256",
-          },
-          {
-            internalType: "enum WhoopieChallengeContract.ChallengeStatus",
-            name: "status",
-            type: "uint8",
-          },
-          {
-            internalType: "enum WhoopieChallengeContract.ChallengeType",
-            name: "challengeType",
-            type: "uint8",
-          },
-          {
-            internalType: "uint256",
-            name: "challengeTarget",
-            type: "uint256",
-          },
-          {
-            internalType: "bool",
-            name: "targetReached",
-            type: "bool",
-          },
-        ],
-        internalType: "struct WhoopieChallengeContract.SelfChallenge[]",
         name: "",
         type: "tuple[]",
       },
@@ -1064,6 +855,87 @@ export const WhoopTokenAbi = [
         internalType: "struct WhoopieChallengeContract.Challenge[]",
         name: "",
         type: "tuple[]",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "uint256",
+        name: "_challengeId",
+        type: "uint256",
+      },
+    ],
+    name: "getPendingChallengeById",
+    outputs: [
+      {
+        components: [
+          {
+            internalType: "uint256",
+            name: "challengeId",
+            type: "uint256",
+          },
+          {
+            internalType: "address",
+            name: "challenger",
+            type: "address",
+          },
+          {
+            internalType: "address",
+            name: "challenged",
+            type: "address",
+          },
+          {
+            internalType: "address",
+            name: "tokenAddress",
+            type: "address",
+          },
+          {
+            internalType: "uint256",
+            name: "challengerAmount",
+            type: "uint256",
+          },
+          {
+            internalType: "uint256",
+            name: "startTime",
+            type: "uint256",
+          },
+          {
+            internalType: "uint256",
+            name: "endTime",
+            type: "uint256",
+          },
+          {
+            internalType: "enum WhoopieChallengeContract.ChallengeStatus",
+            name: "status",
+            type: "uint8",
+          },
+          {
+            internalType: "enum WhoopieChallengeContract.ChallengeType",
+            name: "challengeType",
+            type: "uint8",
+          },
+          {
+            internalType: "uint256",
+            name: "challengeTarget",
+            type: "uint256",
+          },
+          {
+            internalType: "bool",
+            name: "targetReached",
+            type: "bool",
+          },
+          {
+            internalType: "bool",
+            name: "isTwoSided",
+            type: "bool",
+          },
+        ],
+        internalType: "struct WhoopieChallengeContract.Challenge",
+        name: "",
+        type: "tuple",
       },
     ],
     stateMutability: "view",
@@ -1264,6 +1136,26 @@ export const WhoopTokenAbi = [
     type: "function",
   },
   {
+    inputs: [
+      {
+        internalType: "uint256",
+        name: "_challengeId",
+        type: "uint256",
+      },
+    ],
+    name: "rejectChallenge",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "renounceOwnership",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
     inputs: [],
     name: "selfChallengeCounter",
     outputs: [
@@ -1334,6 +1226,37 @@ export const WhoopTokenAbi = [
     inputs: [
       {
         internalType: "address",
+        name: "newOwner",
+        type: "address",
+      },
+    ],
+    name: "transferOwnership",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "uint256",
+        name: "_challengeId",
+        type: "uint256",
+      },
+      {
+        internalType: "bool",
+        name: "_targetReached",
+        type: "bool",
+      },
+    ],
+    name: "updateTargetStatus",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
         name: "",
         type: "address",
       },
@@ -1380,4 +1303,4 @@ export const WhoopTokenAbi = [
   },
 ];
 
-export const WhoopTokenAddress = "0x151fceB3337B585A656C363529FC58178576F5fA";
+export const WhoopTokenAddress = "0xF2bC81f7C336E815f51166B4d70f1FA4C151101c";

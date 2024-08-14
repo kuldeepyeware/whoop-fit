@@ -1,16 +1,14 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-floating-promises */
-/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 "use client";
 
 import { useEffect, useState } from "react";
-import { useAccount } from "wagmi";
 import { CardContent, CardHeader, CardTitle } from "@/app/_components/ui/card";
 import { type Challenge } from "@/schemas/types/challengeTypes";
 import ChallengeCardSkeleton from "../skeleton/ChallengeCardSkeleton";
 import ChallengeCard from "../common/ChallengeCardAddr";
+import { useSmartAccount } from "@/hooks/smartAccountContext";
 
 type EndedChallengeProps = {
   endedChallengesData: any;
@@ -25,7 +23,7 @@ const EndedChallenge: React.FC<EndedChallengeProps> = ({
 }) => {
   const [endedChallenges, setEndedChallenges] = useState<Challenge[]>([]);
 
-  const { address } = useAccount();
+  const { smartAccountAddress } = useSmartAccount();
 
   const render = async () => {
     await refetchEndedChallenges();
@@ -53,7 +51,7 @@ const EndedChallenge: React.FC<EndedChallengeProps> = ({
               <ChallengeCard
                 key={index}
                 challenge={challenge}
-                address={address as string}
+                address={smartAccountAddress as string}
                 onClaimComplete={render}
               />
             ))

@@ -1,15 +1,8 @@
-/* eslint-disable @typescript-eslint/no-floating-promises */
-/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
 import { WhoopTokenAbi, WhoopTokenAddress } from "WhoopContract";
 import { useEffect, useState } from "react";
-import {
-  useWriteContract,
-  useWaitForTransactionReceipt,
-  useAccount,
-  useReadContract,
-} from "wagmi";
+import { useReadContract } from "wagmi";
 import { Button } from "@/app/_components/ui/button";
 import {
   Card,
@@ -28,15 +21,18 @@ import { ClockIcon } from "lucide-react";
 import { api } from "@/trpc/react";
 import { useToast } from "../ui/use-toast";
 import ChallengeCardSkeleton from "../skeleton/ChallengeCardSkeleton";
+import { useAuth } from "@/hooks/authHook";
+import { useSmartAccount } from "@/hooks/smartAccountContext";
 
 const RootAcceptedChallenge = () => {
   const [acceptedChallenges, setAcceptedChallenges] = useState<Challenge[]>([]);
-  const [claimingChallengeID, setClaimingChallengeID] = useState<bigint | null>(
-    null,
-  );
-  const { toast } = useToast();
+  const [checkingResultId, setCheckingResultId] = useState<bigint | null>(null);
 
-  const { address } = useAccount();
+  const { authenticated, walletReady, privyReady } = useAuth();
+
+  const { smartAccountAddress } = useSmartAccount();
+
+  const { toast } = useToast();
 
   const {
     data: acceptedChallengesData,
@@ -46,49 +42,35 @@ const RootAcceptedChallenge = () => {
     address: WhoopTokenAddress,
     abi: WhoopTokenAbi,
     functionName: "getAcceptedChallengesBy",
-    args: [address],
+    args: [smartAccountAddress],
   });
-
-  const { data: claimHash, writeContract: claimChallenge } = useWriteContract(
-    {},
-  );
-
-  const { isLoading: isClaimLoading, isSuccess: isClaimSuccess } =
-    useWaitForTransactionReceipt({
-      hash: claimHash,
-    });
 
   const { mutateAsync: updateTargetMutation, isPending } =
     api.user.updateTargetStatus.useMutation({
-      onSuccess: (data) => {
-        claimChallenge({
-          address: WhoopTokenAddress,
-          abi: WhoopTokenAbi,
-          functionName: "claim",
-          args: [data.id],
-        });
-        render();
-      },
-      onError: () => {
+      onSuccess: async () => {
         toast({
-          title: "Something went wrong try again later!",
+          title: "Result Evaluated successfully!",
         });
-        setClaimingChallengeID(null);
-        render();
+
+        setCheckingResultId(null);
+
+        await refetchAcceptedChallenges();
+      },
+      onError: async () => {
+        toast({
+          title: "Something went wrong, Please try again later!",
+        });
+        setCheckingResultId(null);
       },
     });
 
-  const handleClaim = async (challenge: Challenge) => {
-    setClaimingChallengeID(challenge.challengeId);
+  const handleResult = async (challenge: Challenge) => {
+    setCheckingResultId(challenge.challengeId);
     if (Number(challenge.status) == 1) {
       await updateTargetMutation(challenge);
     } else {
-      await render();
+      await refetchAcceptedChallenges();
     }
-  };
-
-  const render = async () => {
-    await refetchAcceptedChallenges();
   };
 
   useEffect(() => {
@@ -96,16 +78,6 @@ const RootAcceptedChallenge = () => {
       setAcceptedChallenges(acceptedChallengesData as Challenge[]);
     }
   }, [acceptedChallengesData]);
-
-  useEffect(() => {
-    if (isClaimSuccess) {
-      toast({
-        title: "Claimed reward successfully!",
-      });
-      setClaimingChallengeID(null);
-      render();
-    }
-  }, [isClaimSuccess]);
 
   if (isLoading) {
     return <ChallengeCardSkeleton />;
@@ -163,17 +135,20 @@ const RootAcceptedChallenge = () => {
                     formatTimeRemaining(challenge.endTime) == "Ended" && (
                       <div className="flex justify-center space-x-2">
                         <Button
-                          onClick={() => handleClaim(challenge)}
+                          onClick={() => handleResult(challenge)}
                           variant="default"
                           className="w-full bg-green-500 text-white transition-colors hover:bg-green-600"
-                          disabled={isPending || isClaimLoading}
+                          disabled={
+                            isPending ||
+                            !privyReady ||
+                            !walletReady ||
+                            !authenticated
+                          }
                         >
-                          {claimingChallengeID === challenge.challengeId
+                          {checkingResultId === challenge.challengeId
                             ? isPending
                               ? "Updating..."
-                              : isClaimLoading
-                                ? "Claiming..."
-                                : "Check Result"
+                              : "Check Result"
                             : "Check Result"}
                         </Button>
                       </div>

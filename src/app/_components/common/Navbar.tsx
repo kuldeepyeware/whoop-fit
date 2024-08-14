@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ConnectButton } from "@rainbow-me/rainbowkit";
+import { usePrivy } from "@privy-io/react-auth";
 import {
   Sheet,
   SheetContent,
@@ -10,18 +10,25 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/app/_components/ui/sheet";
-import { Menu } from "lucide-react";
-import { usePathname } from "next/navigation";
+import { Menu, UserCircle2 } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
+import { useFundWallet } from "@privy-io/react-auth";
+import { useSmartAccount } from "@/hooks/smartAccountContext";
+import { baseSepolia } from "viem/chains";
 
 const links = [
   {
     href: "/challenges",
     name: "Challenges",
-  },
-  {
-    href: "/selfchallenges",
-    name: "Self Challenges",
   },
   {
     href: "/users",
@@ -32,14 +39,31 @@ const links = [
 const Navbar = () => {
   const pathname = usePathname();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const { ready, authenticated, logout } = usePrivy();
+  const { fundWallet } = useFundWallet();
+  const { smartAccountReady, smartAccountAddress } = useSmartAccount();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    await logout();
+    router.push("/login");
+  };
+
   return (
     <header className="flex h-16 items-center justify-between border-b px-4 md:px-6">
-      <Link href={"/"} className="hidden text-2xl font-bold md:block">
-        Whoop Fit
+      <Link
+        href={"/"}
+        className="hidden text-2xl font-bold hover:text-primary/70 md:block"
+      >
+        Fitcentive
       </Link>
       <nav className="hidden gap-x-10 md:flex">
         {links.map((link, index) => (
-          <Link key={index} href={link.href} className="text-lg font-medium">
+          <Link
+            key={index}
+            href={link.href}
+            className="text-lg font-medium hover:text-primary/70"
+          >
             {link.name}
           </Link>
         ))}
@@ -52,7 +76,9 @@ const Navbar = () => {
           <SheetHeader className="space-y-8">
             <SheetTitle>
               <Link href="/" onClick={() => setIsSheetOpen(false)}>
-                <span className="text-2xl font-medium">Whoop Fit</span>
+                <span className="text-2xl font-medium hover:text-primary/70">
+                  Fitcentive
+                </span>
               </Link>
             </SheetTitle>
             <SheetDescription className="space-y-2">
@@ -77,8 +103,37 @@ const Navbar = () => {
           </SheetHeader>
         </SheetContent>
       </Sheet>
+      <Link className="font-medium hover:text-primary/70 md:hidden" href="/">
+        <span className="block text-2xl">Fitcentive</span>
+      </Link>
       <div className="">
-        <ConnectButton showBalance={false} chainStatus={"none"} />
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <UserCircle2 className="h-9 w-9 text-black" strokeWidth={1} />
+          </DropdownMenuTrigger>
+          {authenticated && ready && smartAccountReady && (
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                disabled={!smartAccountReady}
+                onClick={async () =>
+                  await fundWallet(smartAccountAddress!, {
+                    chain: baseSepolia,
+                  })
+                }
+              >
+                Fund Wallet
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                disabled={!authenticated}
+                onClick={handleLogout}
+              >
+                Log out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          )}
+        </DropdownMenu>
       </div>
     </header>
   );

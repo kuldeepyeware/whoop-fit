@@ -1,95 +1,50 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-
 import { NextResponse } from "next/server";
-import { type NextMiddleware } from "next/server";
-import { getToken } from "next-auth/jwt";
-import { authRoutes, DEFAULT_LOGIN_REDIRECT, apiAuthPrefix } from "./routes";
-// import { refreshWhoopToken } from "@/lib/whoopApi";
-// import { db } from "@/server/db";
+import type { NextRequest } from "next/server";
 
-export const middleware: NextMiddleware = async (req) => {
+const UNAUTHENTICATED_PAGES = ["/login"];
+const PUBLIC_PAGES = ["/profile", "/pendingChallenge"];
+
+export const middleware = async (req: NextRequest) => {
   const { nextUrl } = req;
-  const token = await getToken({ req });
-  const isLoggedIn = !!token;
-  const isApiAuthRoute = nextUrl.pathname.startsWith(apiAuthPrefix);
-  const isAuthRoute = authRoutes.includes(nextUrl.pathname);
 
-  if (isApiAuthRoute) {
+  if (
+    nextUrl.searchParams.get("privy_oauth_code") ??
+    nextUrl.searchParams.get("privy_oauth_state") ??
+    nextUrl.searchParams.get("privy_oauth_provider")
+  ) {
     return NextResponse.next();
   }
 
   if (
     nextUrl.pathname.startsWith("/api/trpc") ||
-    nextUrl.pathname.startsWith("/api/refreshData")
+    nextUrl.pathname.startsWith("/api/refreshData") ||
+    nextUrl.pathname.startsWith("/api/auth/whoop/webhook")
   ) {
     return NextResponse.next();
   }
 
-  if (nextUrl.pathname === "/login") {
-    if (isLoggedIn) {
-      return NextResponse.redirect(new URL(DEFAULT_LOGIN_REDIRECT, nextUrl));
+  for (const publicPage of PUBLIC_PAGES) {
+    if (nextUrl.pathname.startsWith(publicPage)) {
+      return NextResponse.next();
+    }
+  }
+
+  const privyToken = req.cookies.get("privy-token");
+
+  if (privyToken) {
+    if (UNAUTHENTICATED_PAGES.includes(nextUrl.pathname)) {
+      return NextResponse.redirect(new URL("/", req.url));
     }
     return NextResponse.next();
   }
 
-  if (isAuthRoute) {
-    if (isLoggedIn) {
-      return NextResponse.redirect(new URL(DEFAULT_LOGIN_REDIRECT, nextUrl));
-    }
-    return NextResponse.next();
+  if (!UNAUTHENTICATED_PAGES.includes(nextUrl.pathname)) {
+    return NextResponse.redirect(new URL("/login", req.url));
   }
-
-  if (!isLoggedIn) {
-    return NextResponse.redirect(new URL("/login", nextUrl));
-  }
-
-  // const user = await db.user.findUnique({
-  //   where: { id: token.sub },
-  //   select: {
-  //     id: true,
-  //     whoopAccessToken: true,
-  //     whoopRefreshToken: true,
-  //     whoopTokenExpiry: true,
-  //   },
-  // });
-
-  // if (!user) {
-  //   return NextResponse.redirect(new URL("/login", nextUrl));
-  // }
-
-  // if (
-  //   user.whoopAccessToken &&
-  //   user.whoopRefreshToken &&
-  //   user.whoopTokenExpiry
-  // ) {
-  //   const whoopTokenExpiry = new Date(user.whoopTokenExpiry);
-  //   const now = new Date();
-  //   const fiveMinutesFromNow = new Date(now.getTime() + 5 * 60 * 1000);
-
-  //   if (whoopTokenExpiry < fiveMinutesFromNow) {
-  //     try {
-  //       const newTokens = await refreshWhoopToken(user.whoopRefreshToken);
-  //       await db.user.update({
-  //         where: { id: user.id },
-  //         data: {
-  //           whoopAccessToken: newTokens.access_token,
-  //           whoopRefreshToken: newTokens.refresh_token,
-  //           whoopTokenExpiry: new Date(
-  //             Date.now() + newTokens.expires_in * 1000,
-  //           ),
-  //         },
-  //       });
-  //       console.log("Token Refresh");
-  //     } catch (error) {
-  //       console.error("Failed to refresh WHOOP token:", error);
-  //       return NextResponse.redirect(new URL("/", nextUrl));
-  //     }
-  //   }
-  // }
 
   return NextResponse.next();
 };
 
 export const config = {
-  matcher: ["/((?!.*\\..*|_next).*)", "/", "/(api|trpc)(.*)"],
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
 };

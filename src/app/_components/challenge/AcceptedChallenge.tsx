@@ -1,13 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable react-hooks/exhaustive-deps */
-/* eslint-disable @typescript-eslint/no-floating-promises */
 
 "use client";
 
-import { WhoopTokenAbi, WhoopTokenAddress } from "WhoopContract";
 import { useEffect, useState } from "react";
-import { useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { Button } from "@/app/_components/ui/button";
 import {
   Card,
@@ -43,57 +39,35 @@ const AcceptedChallenge: React.FC<AcceptedChallengeProps> = ({
   refetchEndedChallenges,
 }) => {
   const [acceptedChallenges, setAcceptedChallenges] = useState<Challenge[]>([]);
-  const [claimingChallengeID, setClaimingChallengeID] = useState<bigint | null>(
-    null,
-  );
+  const [checkingResultId, setCheckingResultId] = useState<bigint | null>(null);
+
   const { toast } = useToast();
-
-  // const {
-  //   data: acceptedChallengesData,
-  //   refetch: refetchAcceptedChallenges,
-  //   isLoading,
-  // } = useReadContract({
-  //   address: WhoopTokenAddress,
-  //   abi: WhoopTokenAbi,
-  //   functionName: "getAcceptedChallengesBy",
-  //   args: [address],
-  // });
-
-  const { data: claimHash, writeContract: claimChallenge } = useWriteContract(
-    {},
-  );
-
-  const { isLoading: isClaimLoading, isSuccess: isClaimSuccess } =
-    useWaitForTransactionReceipt({
-      hash: claimHash,
-    });
 
   const { mutateAsync: updateTargetMutation, isPending } =
     api.user.updateTargetStatus.useMutation({
-      onSuccess: (data) => {
-        claimChallenge({
-          address: WhoopTokenAddress,
-          abi: WhoopTokenAbi,
-          functionName: "claim",
-          args: [data.id],
-        });
-        render();
-      },
-      onError: () => {
+      onSuccess: async () => {
         toast({
-          title: "Something went wrong try again later!",
+          title: "Result Evaluated successfully!",
         });
-        setClaimingChallengeID(null);
-        render();
+
+        setCheckingResultId(null);
+
+        await render();
+      },
+      onError: async () => {
+        toast({
+          title: "Something went wrong, Please try again later!",
+        });
+        setCheckingResultId(null);
       },
     });
 
   const handleClaim = async (challenge: Challenge) => {
-    setClaimingChallengeID(challenge.challengeId);
+    setCheckingResultId(challenge.challengeId);
     if (Number(challenge.status) == 1) {
-      updateTargetMutation(challenge);
+      await updateTargetMutation(challenge);
     } else {
-      render();
+      await render();
     }
   };
 
@@ -108,16 +82,6 @@ const AcceptedChallenge: React.FC<AcceptedChallengeProps> = ({
       setAcceptedChallenges(acceptedChallengesData as Challenge[]);
     }
   }, [acceptedChallengesData]);
-
-  useEffect(() => {
-    if (isClaimSuccess) {
-      toast({
-        title: "Claimed reward successfully!",
-      });
-      setClaimingChallengeID(null);
-      render();
-    }
-  }, [isClaimSuccess]);
 
   if (isLoading) {
     return <ChallengeCardSkeleton />;
@@ -155,10 +119,10 @@ const AcceptedChallenge: React.FC<AcceptedChallengeProps> = ({
                     </p>
                     <p className="text-sm text-gray-600">
                       <span className="font-semibold">Amount:</span>{" "}
-                      {challenge.challengerAmount.toString()}
+                      {challenge.challengerAmount.toString()} USDC
                     </p>
                     <p className="text-sm text-gray-600">
-                      <span className="font-semibold">Two Sided:</span>{" "}
+                      <span className="font-semibold">1v1:</span>{" "}
                       {challenge.isTwoSided ? "Yes" : "No"}
                     </p>
                     <p className="text-sm text-gray-600">
@@ -178,14 +142,10 @@ const AcceptedChallenge: React.FC<AcceptedChallengeProps> = ({
                           onClick={() => handleClaim(challenge)}
                           variant="default"
                           className="w-full bg-green-500 text-white transition-colors hover:bg-green-600"
-                          disabled={isPending || isClaimLoading}
+                          disabled={isPending}
                         >
-                          {claimingChallengeID === challenge.challengeId
-                            ? isPending
-                              ? "Updating..."
-                              : isClaimLoading
-                                ? "Claiming..."
-                                : "Check Result"
+                          {checkingResultId === challenge.challengeId
+                            ? "Updating..."
                             : "Check Result"}
                         </Button>
                       </div>

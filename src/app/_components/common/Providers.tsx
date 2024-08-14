@@ -1,32 +1,69 @@
 "use client";
 
-import "@rainbow-me/rainbowkit/styles.css";
 import { useState, type ReactNode } from "react";
-import { getDefaultConfig, RainbowKitProvider } from "@rainbow-me/rainbowkit";
-import { WagmiProvider } from "wagmi";
-import { base, baseSepolia } from "wagmi/chains";
+import { WagmiProvider, createConfig } from "@privy-io/wagmi";
+import { baseSepolia } from "wagmi/chains";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 import { env } from "@/env";
-import { SessionProvider } from "next-auth/react";
+import { type PrivyClientConfig, PrivyProvider } from "@privy-io/react-auth";
+import { http } from "viem";
+import { SmartAccountProvider } from "@/hooks/smartAccountContext";
 
-const config = getDefaultConfig({
-  appName: "Whoop Fit",
-  projectId: env.NEXT_PUBLIC_Wallet_Connect_Id,
-  chains: [base, baseSepolia],
-  ssr: true,
+const wagmiConfig = createConfig({
+  chains: [baseSepolia],
+  transports: {
+    [baseSepolia.id]: http(),
+    // [base.id]: http(),
+  },
 });
+
+const privyConfig: PrivyClientConfig = {
+  appearance: {
+    accentColor: "#6A6FF5",
+    theme: "#222224",
+    showWalletLoginFirst: false,
+    // walletList: ["coinbase_wallet"],
+    // logo: "https://pub-dc971f65d0aa41d18c1839f8ab426dcb.r2.dev/privy-dark.png",
+  },
+
+  loginMethods: [
+    "email",
+    "google",
+    // "wallet"
+  ],
+  // fundingMethodConfig: {
+  //   moonpay: {
+  //     useSandbox: true,
+  //   },
+  // },
+
+  // externalWallets: {
+  //   coinbaseWallet: {
+  //     // Valid connection options include 'eoaOnly' (default), 'smartWalletOnly', or 'all'
+  //     connectionOptions: "all",
+  //   },
+  // },
+  embeddedWallets: {
+    createOnLogin: "users-without-wallets",
+    requireUserPasswordOnCreate: true,
+  },
+  mfa: {
+    noPromptOnMfaRequired: false,
+  },
+  defaultChain: baseSepolia,
+};
 
 const Providers = ({ children }: { children: ReactNode }) => {
   const [queryClient] = useState(() => new QueryClient());
 
   return (
-    <SessionProvider>
-      <WagmiProvider config={config}>
-        <QueryClientProvider client={queryClient}>
-          <RainbowKitProvider>{children}</RainbowKitProvider>
-        </QueryClientProvider>
-      </WagmiProvider>
-    </SessionProvider>
+    <PrivyProvider appId={env.NEXT_PUBLIC_PRIVY_APP_ID} config={privyConfig}>
+      <QueryClientProvider client={queryClient}>
+        <WagmiProvider config={wagmiConfig}>
+          <SmartAccountProvider>{children}</SmartAccountProvider>
+        </WagmiProvider>
+      </QueryClientProvider>
+    </PrivyProvider>
   );
 };
 
