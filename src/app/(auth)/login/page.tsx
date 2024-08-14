@@ -96,7 +96,7 @@ const Login = () => {
       }
       setSuccess("Login successful!");
       setError(undefined);
-      router.push("/");
+      router.push("/dashboard");
     },
     onError: (error) => {
       setError(error);

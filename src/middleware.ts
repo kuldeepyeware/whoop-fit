@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 const UNAUTHENTICATED_PAGES = ["/login"];
-const PUBLIC_PAGES = ["/profile", "/pendingChallenge"];
+const PUBLIC_PAGES = ["/profile", "/pendingChallenge", "/"];
 
 export const middleware = async (req: NextRequest) => {
   const { nextUrl } = req;
