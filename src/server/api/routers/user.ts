@@ -85,19 +85,18 @@ export const userRouter = createTRPCRouter({
       return { success: "Registration successful!" };
     }),
 
-  updateSmartAccount: publicProcedure
+  updateSmartAccount: protectedProcedure
     .input(
       z.object({
-        privyId: z.string(),
         smartAccountAddress: z.string(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const { privyId, smartAccountAddress } = input;
+      const { smartAccountAddress } = input;
 
       try {
         const updatedUser = await ctx.db.user.update({
-          where: { privyId: privyId },
+          where: { privyId: ctx.privyUserId },
           data: { smartAccountAddress: smartAccountAddress },
         });
 
@@ -116,6 +115,31 @@ export const userRouter = createTRPCRouter({
         });
       }
     }),
+
+  getSmartAccountStatus: protectedProcedure.query(async ({ ctx }) => {
+    try {
+      const user = await ctx.db.user.findUnique({
+        where: { privyId: ctx.privyUserId },
+      });
+
+      if (!user) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "User not found",
+        });
+      }
+
+      return {
+        isConnected: !!user.smartAccountAddress,
+        storedAddress: user.smartAccountAddress ?? null,
+      };
+    } catch (error) {
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Failed to get smart account status",
+      });
+    }
+  }),
 
   getUsersWithMetrics: protectedProcedure
     .input(

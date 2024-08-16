@@ -17,7 +17,7 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [buttonText, setButtonText] = useState("Login");
 
-  const { authenticated, user } = usePrivy();
+  const { authenticated } = usePrivy();
   const { smartAccountAddress } = useSmartAccount();
   const router = useRouter();
 
@@ -25,32 +25,12 @@ const Login = () => {
     onSuccess: async (data) => {
       setSuccess(data.success);
       setError(undefined);
-      setButtonText("Registering...");
-
-      if (smartAccountAddress && user) {
-        await updateSmartAccount.mutateAsync({
-          privyId: user.id,
-          smartAccountAddress,
-        });
-      }
-    },
-    onError: async (error) => {
-      setError(error.message);
-      setSuccess(undefined);
-      setButtonText("Login");
-      setIsLoading(false);
-    },
-  });
-
-  const updateSmartAccount = api.user.updateSmartAccount.useMutation({
-    onSuccess: async () => {
-      console.log("Smart account updated successfully");
       setButtonText("Redirecting...");
       router.push("/dashboard");
     },
     onError: async (error) => {
-      console.error("Error updating smart account:", error);
-      setError("Failed to update smart account. Please try again.");
+      setError(error.message);
+      setSuccess(undefined);
       setButtonText("Login");
       setIsLoading(false);
     },

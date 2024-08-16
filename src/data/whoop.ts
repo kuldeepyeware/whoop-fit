@@ -46,7 +46,7 @@ async function getWhoopAccessToken(userId: string) {
   try {
     const user = await db.user.findUnique({
       where: {
-        whoopUserId: userId,
+        whoopUserId: String(userId),
       },
       select: {
         whoopAccessToken: true,
