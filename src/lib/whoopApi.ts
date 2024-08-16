@@ -88,7 +88,8 @@ export async function refreshWhoopToken(refreshToken: string) {
     grant_type: "refresh_token",
     client_id: env.WHOOP_CLIENT_ID,
     client_secret: env.WHOOP_CLIENT_SECRET,
-    scope: "offline",
+    scope:
+      "offline read:profile read:body_measurement read:workout read:sleep read:cycles read:recovery",
     refresh_token: refreshToken,
   };
 
@@ -105,6 +106,8 @@ export async function refreshWhoopToken(refreshToken: string) {
     );
 
     const responseText = await response.text();
+
+    console.log("Response text", responseText);
 
     if (!response.ok) {
       throw new Error(

@@ -12,7 +12,7 @@ import {
 } from "@/app/_components/ui/sheet";
 import { Menu, UserCircle2 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,9 +21,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
-import { useFundWallet } from "@privy-io/react-auth";
 import { useSmartAccount } from "@/hooks/smartAccountContext";
-import { baseSepolia } from "viem/chains";
+// import { useFundWallet } from "@privy-io/react-auth";
+// import { baseSepolia } from "viem/chains";
+import { encodeFunctionData } from "viem";
+import { tokenAbi, tokenAddress } from "TokenContract";
+import { useToast } from "../ui/use-toast";
 
 const links = [
   {
@@ -39,10 +42,77 @@ const links = [
 const Navbar = () => {
   const pathname = usePathname();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [canMint, setCanMint] = useState(false);
   const { ready, authenticated, logout } = usePrivy();
-  const { fundWallet } = useFundWallet();
-  const { smartAccountReady, smartAccountAddress } = useSmartAccount();
+  // const { fundWallet } = useFundWallet();
+  const { smartAccountReady, sendUserOperation, smartAccountAddress } =
+    useSmartAccount();
   const router = useRouter();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const checkMintCooldown = () => {
+      const lastMintTime = localStorage.getItem("lastMintTime");
+      if (
+        !lastMintTime ||
+        Date.now() - parseInt(lastMintTime) > 24 * 60 * 60 * 1000
+      ) {
+        setCanMint(true);
+      } else {
+        setCanMint(false);
+      }
+    };
+
+    checkMintCooldown();
+    const interval = setInterval(checkMintCooldown, 60000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleMint = async () => {
+    if (!canMint) return;
+
+    if (!smartAccountReady || !smartAccountAddress) {
+      toast({
+        title: "Smart account is not ready",
+        description: "Please wait for the smart account to initialize",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const mintAmount = 500;
+
+    const mintCallData = encodeFunctionData({
+      abi: tokenAbi,
+      functionName: "mint",
+      args: [mintAmount],
+    });
+
+    try {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      await sendUserOperation({
+        to: tokenAddress,
+        data: mintCallData,
+      });
+
+      localStorage.setItem("lastMintTime", Date.now().toString());
+
+      setCanMint(false);
+
+      toast({
+        title: `Minted 500 MockUSDC to ${smartAccountAddress?.slice(0, 6)}...${smartAccountAddress?.slice(-4)}`,
+      });
+    } catch (error) {
+      console.error("Minting failed:", error);
+
+      toast({
+        title: `Minted Failed`,
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleLogout = async () => {
     await logout();
@@ -119,7 +189,7 @@ const Navbar = () => {
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem
+              {/* <DropdownMenuItem
                 disabled={!smartAccountReady}
                 onClick={async () =>
                   await fundWallet(smartAccountAddress!, {
@@ -128,6 +198,9 @@ const Navbar = () => {
                 }
               >
                 Fund Wallet
+              </DropdownMenuItem> */}
+              <DropdownMenuItem disabled={!canMint} onClick={handleMint}>
+                {canMint ? "Mint Tokens" : "Mint (24h cooldown)"}
               </DropdownMenuItem>
               <DropdownMenuItem
                 disabled={!authenticated}

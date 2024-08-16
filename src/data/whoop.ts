@@ -58,24 +58,27 @@ export async function getWhoopAccessToken(userId: string) {
     console.log("USer", user);
 
     if (user) {
-      if (Number(Date.now()) >= Number(user.whoopTokenExpiry)) {
-        const newToken = await refreshWhoopToken(user.whoopRefreshToken!);
+      // if (Number(Date.now()) >= Number(user.whoopTokenExpiry)) {
+      const newToken = await refreshWhoopToken(user.whoopRefreshToken!);
 
-        const newuserData = await db.user.update({
-          where: {
-            whoopUserId: String(userId),
-          },
-          data: {
-            whoopAccessToken: String(newToken.access_token),
-            whoopRefreshToken: String(newToken.refresh_token),
-            whoopTokenExpiry: new Date(Date.now() + newToken.expires_in * 1000),
-          },
-        });
+      console.log("NewTOken", newToken);
 
-        return newuserData.whoopAccessToken;
-      } else {
-        return user.whoopAccessToken;
-      }
+      const newuserData = await db.user.update({
+        where: {
+          whoopUserId: String(userId),
+        },
+        data: {
+          whoopAccessToken: String(newToken.access_token),
+          whoopRefreshToken: String(newToken.refresh_token),
+          whoopTokenExpiry: new Date(Date.now() + newToken.expires_in * 1000),
+        },
+      });
+
+      return newuserData.whoopAccessToken;
+      // }
+      //  else {
+      // return user.whoopAccessToken;
+      // }
     }
   } catch (error) {
     return console.error(error);
