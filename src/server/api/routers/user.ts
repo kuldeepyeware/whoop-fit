@@ -15,6 +15,7 @@ import {
   getAverageSleepHours,
   getAverageStrain,
 } from "@/data/user";
+import { getWhoopAccessToken } from "@/data/whoop";
 
 const baseLoginSchema = z.object({
   privyId: z.string().min(1, { message: "PrivyId is required" }),
@@ -139,6 +140,24 @@ export const userRouter = createTRPCRouter({
         message: "Failed to get smart account status",
       });
     }
+  }),
+
+  trial: protectedProcedure.query(async ({ ctx }) => {
+    const user = await ctx.db.user.findUnique({
+      where: { privyId: ctx.privyUserId },
+    });
+
+    if (!user) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "User not found",
+      });
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain
+    const token = await getWhoopAccessToken(user?.whoopUserId!);
+
+    console.log("Token", token);
   }),
 
   getUsersWithMetrics: protectedProcedure

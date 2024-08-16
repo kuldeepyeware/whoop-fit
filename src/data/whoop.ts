@@ -42,7 +42,7 @@ async function fetchPaginatedData<T>(
   return allRecords;
 }
 
-async function getWhoopAccessToken(userId: string) {
+export async function getWhoopAccessToken(userId: string) {
   try {
     const user = await db.user.findUnique({
       where: {
@@ -55,13 +55,15 @@ async function getWhoopAccessToken(userId: string) {
       },
     });
 
+    console.log("USer", user);
+
     if (user) {
       if (Number(Date.now()) >= Number(user.whoopTokenExpiry)) {
         const newToken = await refreshWhoopToken(user.whoopRefreshToken!);
 
         const newuserData = await db.user.update({
           where: {
-            whoopUserId: userId,
+            whoopUserId: String(userId),
           },
           data: {
             whoopAccessToken: String(newToken.access_token),

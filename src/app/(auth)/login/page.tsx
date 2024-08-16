@@ -26,7 +26,7 @@ const Login = () => {
       setSuccess(data.success);
       setError(undefined);
       setButtonText("Redirecting...");
-      router.push("/dashboard");
+      router.replace("/dashboard");
     },
     onError: async (error) => {
       setError(error.message);

@@ -35,6 +35,10 @@ const RootAcceptedChallenge = () => {
 
   const { toast } = useToast();
 
+  const { data: ad } = api.user.trial.useQuery();
+
+  console.log("ad", ad);
+
   const { data: smartAccountStatus, isLoading: isStatusLoading } =
     api.user.getSmartAccountStatus.useQuery(undefined, {
       enabled: authenticated && smartAccountAddress !== undefined,
