@@ -45,7 +45,7 @@ const privyConfig: PrivyClientConfig = {
   // },
   embeddedWallets: {
     createOnLogin: "users-without-wallets",
-    requireUserPasswordOnCreate: true,
+    // requireUserPasswordOnCreate: true,
   },
   mfa: {
     noPromptOnMfaRequired: false,

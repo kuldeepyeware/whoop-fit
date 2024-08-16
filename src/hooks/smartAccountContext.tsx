@@ -135,6 +135,15 @@ export const SmartAccountProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [ready, user, wallets, paymaster]);
 
+  useEffect(() => {
+    if (!user) {
+      setSmartAccountReady(false);
+      setSmartAccountClient(undefined);
+      setSmartAccountAddress(undefined);
+      setEoa(undefined);
+    }
+  }, [user]);
+
   const sendUserOperation = async (
     transactionRequest: RpcTransactionRequest,
   ) => {

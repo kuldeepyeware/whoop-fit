@@ -4,6 +4,13 @@ import type { NextRequest } from "next/server";
 const UNAUTHENTICATED_PAGES = ["/login"];
 const PUBLIC_PAGES = ["/profile", "/pendingChallenge", "/"];
 
+function isPublicPage(pathname: string) {
+  return PUBLIC_PAGES.some(
+    (publicPath) =>
+      pathname === publicPath || pathname.startsWith(`${publicPath}/`),
+  );
+}
+
 export const middleware = async (req: NextRequest) => {
   const { nextUrl } = req;
 
@@ -23,17 +30,15 @@ export const middleware = async (req: NextRequest) => {
     return NextResponse.next();
   }
 
-  for (const publicPage of PUBLIC_PAGES) {
-    if (nextUrl.pathname.startsWith(publicPage)) {
-      return NextResponse.next();
-    }
+  if (isPublicPage(nextUrl.pathname)) {
+    return NextResponse.next();
   }
 
   const privyToken = req.cookies.get("privy-token");
 
   if (privyToken) {
     if (UNAUTHENTICATED_PAGES.includes(nextUrl.pathname)) {
-      return NextResponse.redirect(new URL("/", req.url));
+      return NextResponse.redirect(new URL("/dashboard", req.url));
     }
     return NextResponse.next();
   }

@@ -1,10 +1,19 @@
 "use client";
 
-import { redirect, useRouter } from "next/navigation";
-import { Button } from "../_components/ui/button";
+import { useRouter } from "next/navigation";
+import { usePrivy } from "@privy-io/react-auth";
+import Link from "next/link";
+import { useEffect } from "react";
 
-const BenefitPage = () => {
+const LandingPage = () => {
   const router = useRouter();
+  const { authenticated } = usePrivy();
+
+  useEffect(() => {
+    router.prefetch("/dashboard");
+    router.prefetch("/login");
+  }, [router]);
+
   return (
     <div className="font-inter bg-white text-black">
       <header className="bg-white py-20 text-center">
@@ -16,12 +25,12 @@ const BenefitPage = () => {
             Pairing measurable biometric data with monetary <br />
             incentives to achieve lasting health goals.
           </h2>
-          <Button
-            className="bg-[#1756c6]/90"
-            onClick={() => router.replace("/login")}
+          <Link
+            className="rounded-md bg-[#1756c6]/90 p-4 text-lg font-medium text-white hover:bg-[#1756c6]/50"
+            href={authenticated ? "/dashboard" : "/login"}
           >
             Enter App
-          </Button>
+          </Link>
         </div>
       </header>
 
@@ -74,4 +83,4 @@ const BenefitPage = () => {
   );
 };
 
-export default BenefitPage;
+export default LandingPage;

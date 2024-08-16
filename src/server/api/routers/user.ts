@@ -16,73 +16,51 @@ import {
   getAverageStrain,
 } from "@/data/user";
 
-const emailLoginSchema = z.object({
-  method: z.literal("email"),
+const baseLoginSchema = z.object({
   privyId: z.string().min(1, { message: "PrivyId is required" }),
-  embeddedAddress: z
-    .string()
-    .min(1, { message: "Embedded Address is required" }),
-  smartAccountAddress: z
-    .string()
-    .min(1, { message: "SmartAccount Address is required" }),
   email: z
     .string()
     .min(1, { message: "Email is required" })
     .email("Not a valid email"),
+  embeddedAddress: z
+    .string()
+    .min(1, { message: "Embedded Address is required" }),
+  smartAccountAddress: z.string().optional(),
 });
 
-const googleLoginSchema = z.object({
-  method: z.literal("google"),
-  privyId: z.string().min(1, { message: "PrivyId is required" }),
-  name: z.string().min(1, { message: "Name is required" }),
-  email: z
-    .string()
-    .min(1, { message: "Email is required" })
-    .email("Not a valid email"),
-  embeddedAddress: z
-    .string()
-    .min(1, { message: "Embedded Address is required" }),
-  smartAccountAddress: z
-    .string()
-    .min(1, { message: "SmartAccount Address is required" }),
+const emailLoginSchema = baseLoginSchema.extend({
+  method: z.literal("email"),
 });
+
+const googleLoginSchema = baseLoginSchema.extend({
+  method: z.literal("google"),
+  name: z.string().min(1, { message: "Name is required" }),
+});
+
+const registerSchema = z.discriminatedUnion("method", [
+  emailLoginSchema,
+  googleLoginSchema,
+]);
 
 export const userRouter = createTRPCRouter({
   register: publicProcedure
-    .input(
-      z.discriminatedUnion("method", [emailLoginSchema, googleLoginSchema]),
-    )
+    .input(registerSchema)
     .mutation(async ({ ctx, input }) => {
-      let userData;
+      const baseUserData = {
+        email: input.email,
+        privyId: input.privyId,
+        embeddedAddress: input.embeddedAddress,
+        smartAccountAddress: input.smartAccountAddress,
+      };
 
-      switch (input.method) {
-        case "email":
-          userData = {
-            email: input.email,
-            privyId: input.privyId,
-            embeddedAddress: input.embeddedAddress,
-            smartAccountAddress: input.smartAccountAddress,
-          };
-          break;
-        case "google":
-          userData = {
-            name: input.name,
-            email: input.email,
-            privyId: input.privyId,
-            embeddedAddress: input.embeddedAddress,
-            smartAccountAddress: input.smartAccountAddress,
-          };
-          break;
-      }
+      const userData =
+        input.method === "google"
+          ? { ...baseUserData, name: input.name }
+          : baseUserData;
 
       const existingUser = await ctx.db.user.findFirst({
         where: {
-          OR: [
-            { email: "email" in userData ? userData.email : "" },
-            {
-              privyId: "privyId" in userData ? userData.privyId : "",
-            },
-          ],
+          OR: [{ email: userData.email }, { privyId: userData.privyId }],
         },
       });
 
@@ -105,6 +83,38 @@ export const userRouter = createTRPCRouter({
       }
 
       return { success: "Registration successful!" };
+    }),
+
+  updateSmartAccount: publicProcedure
+    .input(
+      z.object({
+        privyId: z.string(),
+        smartAccountAddress: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { privyId, smartAccountAddress } = input;
+
+      try {
+        const updatedUser = await ctx.db.user.update({
+          where: { privyId: privyId },
+          data: { smartAccountAddress: smartAccountAddress },
+        });
+
+        if (!updatedUser) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "User not found",
+          });
+        }
+
+        return { success: "Smart account address updated successfully!" };
+      } catch (error) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to add smart account account! Try again",
+        });
+      }
     }),
 
   getUsersWithMetrics: protectedProcedure

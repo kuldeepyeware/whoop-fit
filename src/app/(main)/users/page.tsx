@@ -334,7 +334,7 @@ const Users = () => {
               <UsersTableSkeleton />
             ) : (
               <>
-                {!connectionStatus?.isConnected ? (
+                {connectionStatus?.isConnected ? (
                   <>
                     {users.length >= 1 ? (
                       <>

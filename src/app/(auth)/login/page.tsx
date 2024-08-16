@@ -1,22 +1,23 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
 "use client";
-
-import FormError from "@/app/_components/common/FormError";
-import FormSuccess from "@/app/_components/common/FormSuccess";
+import { useState, useEffect } from "react";
+import { useLogin, usePrivy } from "@privy-io/react-auth";
+import { useRouter } from "next/navigation";
+import { api } from "@/trpc/react";
+import { useSmartAccount } from "@/hooks/smartAccountContext";
 import { Button } from "@/app/_components/ui/button";
 import { Card, CardContent, CardHeader } from "@/app/_components/ui/card";
-import { useSmartAccount } from "@/hooks/smartAccountContext";
-import { api } from "@/trpc/react";
-import { useLogin, usePrivy } from "@privy-io/react-auth";
+import FormError from "@/app/_components/common/FormError";
+import FormSuccess from "@/app/_components/common/FormSuccess";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
-
-import { useState } from "react";
 
 const Login = () => {
   const [error, setError] = useState<string | undefined>("");
   const [success, setSuccess] = useState<string | undefined>("");
-  const { ready, authenticated } = usePrivy();
+  const [isLoading, setIsLoading] = useState(false);
+  const [buttonText, setButtonText] = useState("Login");
+
+  const { authenticated, user } = usePrivy();
   const { smartAccountAddress } = useSmartAccount();
   const router = useRouter();
 
@@ -24,10 +25,34 @@ const Login = () => {
     onSuccess: async (data) => {
       setSuccess(data.success);
       setError(undefined);
+      setButtonText("Registering...");
+
+      if (smartAccountAddress && user) {
+        await updateSmartAccount.mutateAsync({
+          privyId: user.id,
+          smartAccountAddress,
+        });
+      }
     },
     onError: async (error) => {
       setError(error.message);
       setSuccess(undefined);
+      setButtonText("Login");
+      setIsLoading(false);
+    },
+  });
+
+  const updateSmartAccount = api.user.updateSmartAccount.useMutation({
+    onSuccess: async () => {
+      console.log("Smart account updated successfully");
+      setButtonText("Redirecting...");
+      router.push("/dashboard");
+    },
+    onError: async (error) => {
+      console.error("Error updating smart account:", error);
+      setError("Failed to update smart account. Please try again.");
+      setButtonText("Login");
+      setIsLoading(false);
     },
   });
 
@@ -38,85 +63,77 @@ const Login = () => {
       wasAlreadyAuthenticated,
       loginMethod,
     ) => {
+      setIsLoading(true);
+      setButtonText(isNewUser ? "Registering..." : "Logging in...");
+
       if (isNewUser && !wasAlreadyAuthenticated) {
         try {
-          if (loginMethod === null) {
-            console.error("Login method is null");
-            return;
+          if (!loginMethod) {
+            throw new Error("Login method is null");
           }
 
-          await waitForSmartAccountAddress();
+          const registerData = {
+            method: loginMethod as "email" | "google",
+            privyId: user.id,
+            email: user.email?.address ?? user.google?.email ?? "",
+            embeddedAddress: user.wallet?.address ?? "",
+            smartAccountAddress: smartAccountAddress ?? "",
+            ...(loginMethod === "google" && user.google?.name
+              ? { name: user.google.name }
+              : {}),
+          };
 
-          let registerData:
-            | {
-                method: "email";
-                email: string;
-                privyId: string;
-                embeddedAddress: string;
-                smartAccountAddress: string;
-              }
-            | {
-                method: "google";
-                name: string;
-                email: string;
-                privyId: string;
-                embeddedAddress: string;
-                smartAccountAddress: string;
-              };
-
-          switch (loginMethod) {
-            case "email":
-              registerData = {
-                method: "email",
-                privyId: user.id,
-                email: user.email?.address ?? "",
-                embeddedAddress: user.wallet?.address ?? "",
-                smartAccountAddress: smartAccountAddress ?? "",
-              };
-              break;
-            case "google":
-              registerData = {
-                method: "google",
-                privyId: user.id,
-                name: user.google?.name ?? "",
-                email: user.google?.email ?? "",
-                embeddedAddress: user.wallet?.address ?? "",
-                smartAccountAddress: smartAccountAddress ?? "",
-              };
-              break;
-            default:
-              console.error("Unsupported login method");
-              return;
-          }
-
-          await register.mutateAsync(registerData);
+          await register.mutateAsync(
+            loginMethod === "google"
+              ? (registerData as {
+                  method: "google";
+                  name: string;
+                  privyId: string;
+                  email: string;
+                  embeddedAddress: string;
+                  smartAccountAddress: string;
+                })
+              : (registerData as {
+                  method: "email";
+                  privyId: string;
+                  email: string;
+                  embeddedAddress: string;
+                  smartAccountAddress: string;
+                }),
+          );
         } catch (error) {
           console.error("Error adding new user to the database:", error);
+          setError("Registration failed. Please try again.");
+          setButtonText("Login");
+          setIsLoading(false);
         }
+      } else {
+        setSuccess("Login successful!");
+        setButtonText("Redirecting...");
+        router.push("/dashboard");
       }
-      setSuccess("Login successful!");
-      setError(undefined);
-      router.push("/dashboard");
     },
     onError: (error) => {
-      setError(error);
+      setError(error.toString());
       setSuccess(undefined);
       console.error("Login error:", error);
+      setButtonText("Login");
+      setIsLoading(false);
     },
   });
 
-  const waitForSmartAccountAddress = () => {
-    return new Promise<void>((resolve) => {
-      const checkAddress = () => {
-        if (smartAccountAddress) {
-          resolve();
-        } else {
-          setTimeout(checkAddress, 250);
-        }
-      };
-      checkAddress();
-    });
+  const handleLogin = () => {
+    setIsLoading(true);
+    setButtonText("Connecting...");
+    login();
   };
+
+  useEffect(() => {
+    if (authenticated) {
+      setButtonText("Logged In");
+      setIsLoading(true);
+    }
+  }, [authenticated]);
 
   return (
     <main className="flex h-screen w-screen items-center justify-center">
@@ -128,16 +145,17 @@ const Login = () => {
             width={500}
             height={500}
             className="h-full w-full rounded-full"
+            loading="lazy"
           />
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
             <Button
               className="w-[300px] text-base"
-              disabled={!ready || authenticated}
-              onClick={login}
+              disabled={isLoading || authenticated}
+              onClick={handleLogin}
             >
-              Login
+              {buttonText}
             </Button>
             <FormSuccess message={success} />
             <FormError message={error} />

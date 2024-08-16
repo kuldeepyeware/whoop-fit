@@ -52,7 +52,7 @@ const Navbar = () => {
   return (
     <header className="flex h-16 items-center justify-between border-b px-4 md:px-6">
       <Link
-        href={"/"}
+        href={"/dashboard"}
         className="hidden text-2xl font-bold hover:text-primary/70 md:block"
       >
         Fitcentive
@@ -63,6 +63,7 @@ const Navbar = () => {
             key={index}
             href={link.href}
             className="text-lg font-medium hover:text-primary/70"
+            prefetch={true}
           >
             {link.name}
           </Link>
@@ -75,7 +76,7 @@ const Navbar = () => {
         <SheetContent side="left" className="w-[250px]">
           <SheetHeader className="space-y-8">
             <SheetTitle>
-              <Link href="/" onClick={() => setIsSheetOpen(false)}>
+              <Link href="/dashboard" onClick={() => setIsSheetOpen(false)}>
                 <span className="text-2xl font-medium hover:text-primary/70">
                   Fitcentive
                 </span>
@@ -103,7 +104,10 @@ const Navbar = () => {
           </SheetHeader>
         </SheetContent>
       </Sheet>
-      <Link className="font-medium hover:text-primary/70 md:hidden" href="/">
+      <Link
+        className="font-medium hover:text-primary/70 md:hidden"
+        href="/dashboard"
+      >
         <span className="block text-2xl">Fitcentive</span>
       </Link>
       <div className="">
