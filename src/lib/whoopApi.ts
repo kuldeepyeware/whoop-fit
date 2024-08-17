@@ -85,17 +85,17 @@ import { env } from "@/env";
 
 export async function refreshWhoopToken(refreshToken: string) {
   const refreshParams = {
-    // grant_type: "refresh_token",
-    // client_id: env.WHOOP_CLIENT_ID,
-    // client_secret: env.WHOOP_CLIENT_SECRET,
-    // scope:
-    //   "offline read:profile read:body_measurement read:workout read:sleep read:cycles read:recovery",
-    // refresh_token: refreshToken,
-    grant_type: "refresh_token".trim(),
-    client_id: env.WHOOP_CLIENT_ID.trim(),
-    client_secret: env.WHOOP_CLIENT_SECRET.trim(),
-    scope: "offline".trim(),
-    refresh_token: refreshToken.trim(),
+    grant_type: "refresh_token",
+    client_id: env.WHOOP_CLIENT_ID,
+    client_secret: env.WHOOP_CLIENT_SECRET,
+    scope:
+      "offline read:profile read:body_measurement read:workout read:sleep read:cycles read:recovery",
+    refresh_token: refreshToken,
+    // grant_type: "refresh_token".trim(),
+    // client_id: env.WHOOP_CLIENT_ID.trim(),
+    // client_secret: env.WHOOP_CLIENT_SECRET.trim(),
+    // scope: "offline".trim(),
+    // refresh_token: refreshToken.trim(),
   };
 
   try {
