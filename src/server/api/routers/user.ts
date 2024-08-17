@@ -15,7 +15,7 @@ import {
   getAverageSleepHours,
   getAverageStrain,
 } from "@/data/user";
-// import { getWhoopAccessToken } from "@/data/whoop";
+import { getWhoopAccessToken } from "@/data/whoop";
 
 const baseLoginSchema = z.object({
   privyId: z.string().min(1, { message: "PrivyId is required" }),
@@ -157,7 +157,7 @@ export const userRouter = createTRPCRouter({
   //   // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain
   //   const token = await getWhoopAccessToken(user?.whoopUserId!);
 
-  //   console.log("Token", token);
+  //   console.log("Token jdgjjjjfghjfghfgfghfhgfhg", token);
   // }),
 
   getUsersWithMetrics: protectedProcedure
@@ -278,7 +278,7 @@ export const userRouter = createTRPCRouter({
       const whoopData = await ctx.db.user.findUnique({
         where: { privyId: ctx?.privyUserId },
         select: {
-          whoopWorkouts: true,
+          whoopCycles: true,
           whoopRecoveries: true,
           whoopSleeps: true,
         },
@@ -306,26 +306,26 @@ export const userRouter = createTRPCRouter({
 
       switch (challengeType) {
         case 0: // Calories
-          const totalCalories = whoopData.whoopWorkouts
+          const totalCalories = whoopData.whoopCycles
             .filter(
-              (workout) =>
-                isWithinChallengePeriod(new Date(workout.end)) &&
-                workout.scoreState === "SCORED",
+              (cycle) =>
+                isWithinChallengePeriod(new Date(cycle.end)) &&
+                cycle.scoreState === "SCORED",
             )
-            .reduce((sum, workout) => sum + workout.kilojoule * 0.239006, 0); // Convert kJ to kcal
+            .reduce((sum, cycle) => sum + cycle.kilojoule * 0.239006, 0); // Convert kJ to kcal
 
           const averageCaloriesPerDay = totalCalories / challengeDurationDays;
           targetReached = averageCaloriesPerDay >= Number(challengeTarget);
           break;
 
         case 1: // Strain
-          const totalStrain = whoopData.whoopWorkouts
+          const totalStrain = whoopData.whoopCycles
             .filter(
-              (workout) =>
-                isWithinChallengePeriod(new Date(workout.end)) &&
-                workout.scoreState === "SCORED",
+              (cycle) =>
+                isWithinChallengePeriod(new Date(cycle.end)) &&
+                cycle.scoreState === "SCORED",
             )
-            .reduce((sum, workout) => sum + workout.strain, 0);
+            .reduce((sum, cycle) => sum + cycle.strain, 0);
 
           const averageStrainPerDay = totalStrain / challengeDurationDays;
           targetReached = averageStrainPerDay >= Number(challengeTarget);

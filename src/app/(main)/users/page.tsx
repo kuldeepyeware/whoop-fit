@@ -373,8 +373,10 @@ const Users = () => {
                                     %
                                   </TableCell>
                                   <TableCell className="w-1/5 md:w-1/5">
-                                    {user.whoopRecoveries[0]?.recoveryScore ??
-                                      0}
+                                    {Number(
+                                      user.whoopRecoveries[0]?.recoveryScore ??
+                                        0,
+                                    ).toFixed(1)}
                                   </TableCell>
                                   <TableCell className="w-1/5 md:w-1/5">
                                     {Number(
@@ -555,13 +557,13 @@ const Users = () => {
                           <FormItem>
                             <FormLabel className="flex items-center gap-2">
                               <RadioGroupItem value="improvement" />
-                              <span>Improvement</span>
+                              <span>Percent</span>
                             </FormLabel>
                           </FormItem>
                           <FormItem>
                             <FormLabel className="flex items-center gap-2">
                               <RadioGroupItem value="direct" />
-                              <span>Direct</span>
+                              <span>Absolute</span>
                             </FormLabel>
                           </FormItem>
                         </RadioGroup>

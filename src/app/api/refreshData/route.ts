@@ -182,7 +182,7 @@ export const GET = async (req: NextRequest) => {
 
       await db.cron.create({
         data: {
-          name: "Test",
+          name: "Pass",
         },
       });
 
@@ -190,6 +190,12 @@ export const GET = async (req: NextRequest) => {
     }
   } catch (error) {
     console.error("Error in refresh WHOOP data:", error);
+    await db.cron.create({
+      data: {
+        name: "Error",
+      },
+    });
+
     return NextResponse.json(
       { success: false, error: (error as Error).message },
       { status: 500 },

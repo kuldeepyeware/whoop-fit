@@ -74,6 +74,10 @@ export async function getWhoopAccessToken(userId: string) {
         },
       });
 
+      console.log("newUSerData", newuserData);
+
+      console.log("newuserData.whoopAccessToken", newuserData.whoopAccessToken);
+
       return newuserData.whoopAccessToken;
       // }
       //  else {

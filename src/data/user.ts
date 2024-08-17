@@ -6,31 +6,28 @@ async function getAverageCalories(
   userId: string,
   startDate: Date,
 ): Promise<number> {
-  const workouts = await db.workout.findMany({
+  const cycles = await db.cycle.findMany({
     where: { userId, start: { gte: startDate } },
     select: { kilojoule: true },
   });
-  const totalCalories = workouts.reduce(
+  const totalCalories = cycles.reduce(
     (sum, workout) => sum + workout.kilojoule * 0.239006,
     0,
   );
-  return totalCalories / workouts.length || 0;
+  return totalCalories / cycles.length || 0;
 }
 
 async function getAverageStrain(
   userId: string,
   startDate: Date,
 ): Promise<number> {
-  const workouts = await db.workout.findMany({
+  const cycles = await db.cycle.findMany({
     where: { userId, start: { gte: startDate } },
     select: { strain: true },
   });
 
-  const totalStrain = workouts.reduce(
-    (sum, workout) => sum + workout.strain,
-    0,
-  );
-  return totalStrain / workouts.length || 0;
+  const totalStrain = cycles.reduce((sum, workout) => sum + workout.strain, 0);
+  return totalStrain / cycles.length || 0;
 }
 
 async function getAverageSleepHours(

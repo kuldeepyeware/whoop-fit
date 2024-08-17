@@ -169,7 +169,7 @@ const UserInfo = () => {
                         {Number(
                           whoopData?.whoopSleeps[0]
                             ?.sleepEfficiencyPercentage ?? 0,
-                        ).toFixed(1)}
+                        ).toFixed(2)}
                         %
                       </div>
                       <div className="text-sm text-muted-foreground">
@@ -179,7 +179,8 @@ const UserInfo = () => {
 
                     <Card className="p-4">
                       <div className="text-4xl font-bold">
-                        {whoopData?.whoopRecoveries[0]?.recoveryScore ?? 0}
+                        {Number(whoopData?.whoopRecoveries[0]?.recoveryScore) ??
+                          0}
                       </div>
                       <div className="text-sm text-muted-foreground">
                         Latest Recovery Score

@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
 
     await db.webhook.create({
       data: {
-        name: "Test",
+        name: "Pass",
       },
     });
 
@@ -50,9 +50,9 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error("Error processing webhook:", error);
 
-    await db.webhook.create({
+    await db.cron.create({
       data: {
-        name: "Failed",
+        name: "Error",
       },
     });
 
