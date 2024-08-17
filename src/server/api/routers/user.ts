@@ -309,7 +309,7 @@ export const userRouter = createTRPCRouter({
           const totalCalories = whoopData.whoopCycles
             .filter(
               (cycle) =>
-                isWithinChallengePeriod(new Date(cycle.end)) &&
+                isWithinChallengePeriod(new Date(cycle.end!)) &&
                 cycle.scoreState === "SCORED",
             )
             .reduce((sum, cycle) => sum + cycle.kilojoule * 0.239006, 0); // Convert kJ to kcal
@@ -322,7 +322,7 @@ export const userRouter = createTRPCRouter({
           const totalStrain = whoopData.whoopCycles
             .filter(
               (cycle) =>
-                isWithinChallengePeriod(new Date(cycle.end)) &&
+                isWithinChallengePeriod(new Date(cycle.end!)) &&
                 cycle.scoreState === "SCORED",
             )
             .reduce((sum, cycle) => sum + cycle.strain, 0);
