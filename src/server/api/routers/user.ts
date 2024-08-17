@@ -15,7 +15,7 @@ import {
   getAverageSleepHours,
   getAverageStrain,
 } from "@/data/user";
-import { getWhoopAccessToken } from "@/data/whoop";
+// import { getWhoopAccessToken } from "@/data/whoop";
 
 const baseLoginSchema = z.object({
   privyId: z.string().min(1, { message: "PrivyId is required" }),
