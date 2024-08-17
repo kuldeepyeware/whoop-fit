@@ -23,6 +23,8 @@ export const GET = async (req: NextRequest) => {
   const result = await res.json();
   console.log(result);
 
+  return NextResponse.json({ success: true, result });
+
   try {
     // const users = await db.user.findMany({
     //   where: {
