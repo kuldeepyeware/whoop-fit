@@ -148,7 +148,7 @@ const ProfilePage = ({ params }: { params: { id: string } }) => {
       userId: profileData?.whoopProfile[0]?.userId ?? "",
       metric:
         (getChallengeTypeString(
-          Number(form.watch("challengeType") || "0"),
+          Number(form.watch("challengeType") ?? "0"),
         ) as "Calories") ??
         "Strain" ??
         "Sleep Hours" ??
@@ -280,6 +280,10 @@ const ProfilePage = ({ params }: { params: { id: string } }) => {
 
     setIsPending(true);
 
+    const challengeType = values.holisticType
+      ? getChallengeTypeFromHolistic(values.holisticType)
+      : Number(values.challengeType);
+
     const challengeTarget = calculateChallengeTarget(values);
 
     const approveTokencallData = encodeFunctionData({
@@ -296,7 +300,7 @@ const ProfilePage = ({ params }: { params: { id: string } }) => {
         tokenAddress,
         BigInt(values.amount),
         BigInt(new Date(values.endTime).getTime() / 1000),
-        Number(values.challengeType),
+        challengeType,
         BigInt(Math.round(challengeTarget)),
         values.isTwoSided,
       ],
