@@ -25,7 +25,7 @@ const Login = () => {
       setButtonText("Logging in...");
       setSuccess("Login successful!");
       setButtonText("Redirecting...");
-      router.push("/dashboard");
+      router.replace("/dashboard");
     },
     onError: (error) => {
       setError(error.toString());
@@ -45,8 +45,8 @@ const Login = () => {
   useEffect(() => {
     if (authenticated) {
       setButtonText("Logged In");
-      router.push("/dashboard");
       setIsLoading(true);
+      router.replace("/dashboard");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authenticated]);
