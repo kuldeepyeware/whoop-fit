@@ -112,8 +112,6 @@ export async function refreshWhoopToken(refreshToken: string) {
 
     const responseText = await response.text();
 
-    console.log("Response text", responseText);
-
     if (!response.ok) {
       throw new Error(
         `Failed to refresh WHOOP token: ${response.status} ${responseText}`,

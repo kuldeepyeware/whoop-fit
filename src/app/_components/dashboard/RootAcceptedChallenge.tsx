@@ -27,7 +27,6 @@ import { useSmartAccount } from "@/hooks/smartAccountContext";
 const RootAcceptedChallenge = () => {
   const [acceptedChallenges, setAcceptedChallenges] = useState<Challenge[]>([]);
   const [checkingResultId, setCheckingResultId] = useState<bigint | null>(null);
-  const [hasAttemptedUpdate, setHasAttemptedUpdate] = useState(false);
 
   const { authenticated, walletReady, privyReady } = useAuth();
 
@@ -38,20 +37,6 @@ const RootAcceptedChallenge = () => {
   // const { data: ad } = api.user.trial.useQuery();
 
   // console.log("ad", ad);
-
-  const { data: smartAccountStatus, isLoading: isStatusLoading } =
-    api.user.getSmartAccountStatus.useQuery(undefined, {
-      enabled: authenticated && smartAccountAddress !== undefined,
-    });
-
-  const updateSmartAccount = api.user.updateSmartAccount.useMutation({
-    onSuccess: async () => {
-      console.log("Smart account updated successfully");
-    },
-    onError: async (error) => {
-      console.error("Error updating smart account:", error);
-    },
-  });
 
   const {
     data: acceptedChallengesData,
@@ -97,31 +82,6 @@ const RootAcceptedChallenge = () => {
       setAcceptedChallenges(acceptedChallengesData as Challenge[]);
     }
   }, [acceptedChallengesData]);
-
-  useEffect(() => {
-    if (
-      authenticated &&
-      smartAccountAddress &&
-      !isStatusLoading &&
-      smartAccountStatus &&
-      !hasAttemptedUpdate
-    ) {
-      const { isConnected } = smartAccountStatus;
-
-      if (!isConnected) {
-        updateSmartAccount.mutate({ smartAccountAddress });
-      }
-
-      setHasAttemptedUpdate(true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    authenticated,
-    smartAccountAddress,
-    smartAccountStatus,
-    isStatusLoading,
-    hasAttemptedUpdate,
-  ]);
 
   if (isLoading) {
     return <ChallengeCardSkeleton />;

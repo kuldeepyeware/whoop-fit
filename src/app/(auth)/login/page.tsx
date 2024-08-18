@@ -3,8 +3,6 @@
 import { useState, useEffect } from "react";
 import { useLogin, usePrivy } from "@privy-io/react-auth";
 import { useRouter } from "next/navigation";
-import { api } from "@/trpc/react";
-import { useSmartAccount } from "@/hooks/smartAccountContext";
 import { Button } from "@/app/_components/ui/button";
 import { Card, CardContent, CardHeader } from "@/app/_components/ui/card";
 import FormError from "@/app/_components/common/FormError";
@@ -18,80 +16,16 @@ const Login = () => {
   const [buttonText, setButtonText] = useState("Login");
 
   const { authenticated } = usePrivy();
-  const { smartAccountAddress } = useSmartAccount();
+
   const router = useRouter();
 
-  const register = api.user.register.useMutation({
-    onSuccess: async (data) => {
-      setSuccess(data.success);
-      setError(undefined);
-      setButtonText("Redirecting...");
-      router.replace("/dashboard");
-    },
-    onError: async (error) => {
-      setError(error.message);
-      setSuccess(undefined);
-      setButtonText("Login");
-      setIsLoading(false);
-    },
-  });
-
   const { login } = useLogin({
-    onComplete: async (
-      user,
-      isNewUser,
-      wasAlreadyAuthenticated,
-      loginMethod,
-    ) => {
+    onComplete: async () => {
       setIsLoading(true);
-      setButtonText(isNewUser ? "Registering..." : "Logging in...");
-
-      if (isNewUser && !wasAlreadyAuthenticated) {
-        try {
-          if (!loginMethod) {
-            throw new Error("Login method is null");
-          }
-
-          const registerData = {
-            method: loginMethod as "email" | "google",
-            privyId: user.id,
-            email: user.email?.address ?? user.google?.email ?? "",
-            embeddedAddress: user.wallet?.address ?? "",
-            smartAccountAddress: smartAccountAddress ?? "",
-            ...(loginMethod === "google" && user.google?.name
-              ? { name: user.google.name }
-              : {}),
-          };
-
-          await register.mutateAsync(
-            loginMethod === "google"
-              ? (registerData as {
-                  method: "google";
-                  name: string;
-                  privyId: string;
-                  email: string;
-                  embeddedAddress: string;
-                  smartAccountAddress: string;
-                })
-              : (registerData as {
-                  method: "email";
-                  privyId: string;
-                  email: string;
-                  embeddedAddress: string;
-                  smartAccountAddress: string;
-                }),
-          );
-        } catch (error) {
-          console.error("Error adding new user to the database:", error);
-          setError("Registration failed. Please try again.");
-          setButtonText("Login");
-          setIsLoading(false);
-        }
-      } else {
-        setSuccess("Login successful!");
-        setButtonText("Redirecting...");
-        router.push("/dashboard");
-      }
+      setButtonText("Logging in...");
+      setSuccess("Login successful!");
+      setButtonText("Redirecting...");
+      router.push("/dashboard");
     },
     onError: (error) => {
       setError(error.toString());
@@ -111,6 +45,7 @@ const Login = () => {
   useEffect(() => {
     if (authenticated) {
       setButtonText("Logged In");
+      router.push("/dashboard");
       setIsLoading(true);
     }
   }, [authenticated]);

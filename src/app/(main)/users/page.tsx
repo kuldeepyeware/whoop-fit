@@ -19,6 +19,12 @@ import {
   PaginationPrevious,
 } from "@/app/_components/ui/pagination";
 import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/app/_components/ui/tabs";
+import {
   Card,
   CardContent,
   CardDescription,
@@ -62,7 +68,11 @@ import { useAuth } from "@/hooks/authHook";
 import { useSmartAccount } from "@/hooks/smartAccountContext";
 import { encodeFunctionData } from "viem";
 import { RadioGroup, RadioGroupItem } from "@/app/_components/ui/radio-group";
-import { getChallengeTypeString, getTomorrowDate } from "@/lib/challenge";
+import {
+  getChallengeTypeString,
+  getTomorrowDate,
+  holisticTypes,
+} from "@/lib/challenge";
 import { Label } from "@/app/_components/ui/label";
 import { useReadContract } from "wagmi";
 import ChallengeLink from "@/app/_components/common/ChallengeLink";
@@ -70,45 +80,46 @@ import { env } from "@/env";
 
 const formSchema = z
   .object({
-    amount: z.string().min(1, "Amount is required"),
     endTime: z.string().min(1, "End time is required"),
-    challengeType: z.string().min(1, "Challenge type is required"),
+    challengeType: z.string().optional(),
+    holisticType: z.enum(["all-around", "sleep", "workout"]).optional(),
     targetType: z.enum(["direct", "improvement"]),
     challengeTarget: z.string().optional(),
-    improvementPercentage: z.number().nullable(),
-    customImprovement: z.number().nullable(),
-    isTwoSided: z.boolean().optional(),
+    improvementPercentage: z.string().nullable(),
+    customImprovement: z.string().optional(),
+    amount: z.string().min(1, "Amount is required"),
+    isTwoSided: z.boolean(),
   })
   .refine(
     (data) => {
       if (data.targetType === "direct") {
-        return !!data.challengeTarget;
+        return !!data.challengeTarget && !isNaN(Number(data.challengeTarget));
       } else if (data.targetType === "improvement") {
-        return (
-          data.improvementPercentage !== null || data.customImprovement !== null
-        );
+        if (data.improvementPercentage === "custom") {
+          return (
+            !!data.customImprovement && !isNaN(Number(data.customImprovement))
+          );
+        } else {
+          return !!data.improvementPercentage;
+        }
       }
       return false;
     },
     {
-      message: "Either challenge target or improvement must be specified",
+      message: "Please provide a valid target or improvement percentage",
       path: ["challengeTarget"],
     },
   )
   .refine(
     (data) => {
-      if (
-        data.targetType === "improvement" &&
-        data.customImprovement === null
-      ) {
-        return data.improvementPercentage !== null;
+      if (data.holisticType) {
+        return true;
       }
-      return true;
+      return !!data.challengeType;
     },
     {
-      message:
-        "Custom improvement must be specified when selecting a custom percentage",
-      path: ["customImprovement"],
+      message: "Challenge type is required for isolated challenges",
+      path: ["challengeType"],
     },
   );
 
@@ -123,6 +134,9 @@ const Users = () => {
   const [isPending, setIsPending] = useState(false);
   const [averageMetric, setAverageMetric] = useState(0);
   const [challengeLink, setChallengeLink] = useState<string | null>(null);
+  const [selectedHolisticType, setSelectedHolisticType] = useState<
+    string | null
+  >(null);
 
   const { toast } = useToast();
 
@@ -134,14 +148,15 @@ const Users = () => {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      amount: "",
       endTime: "",
       challengeType: "",
+      holisticType: undefined,
       targetType: "improvement",
       challengeTarget: "",
-      improvementPercentage: null,
-      customImprovement: null,
+      improvementPercentage: "",
       isTwoSided: false,
+      customImprovement: "",
+      amount: "",
     },
   });
 
@@ -167,14 +182,14 @@ const Users = () => {
       userId: selectedUser?.whoopProfile[0]?.userId ?? "",
       metric:
         (getChallengeTypeString(
-          Number(form.watch("challengeType") || "0"),
+          Number(form.watch("challengeType") ?? "0"),
         ) as "Calories") ??
         "Strain" ??
         "Sleep Hours" ??
         "Recovery",
     },
     {
-      enabled: !!form.watch("challengeType"),
+      enabled: !!form.watch("challengeType") && !form.watch("holisticType"),
     },
   );
 
@@ -186,23 +201,70 @@ const Users = () => {
     });
 
   const calculateChallengeTarget = (values: FormValues): number => {
-    const challengeType = Number(values.challengeType);
+    if (values.holisticType) {
+      return Number(values.improvementPercentage);
+    }
 
     if (values.targetType === "direct") {
       return Number(values.challengeTarget);
     } else {
-      const improvementPercentage =
-        values.improvementPercentage ?? values.customImprovement ?? 0;
+      let improvementPercentage: number;
+      if (values.improvementPercentage === "custom") {
+        improvementPercentage = Number(values.customImprovement);
+      } else {
+        improvementPercentage = Number(values.improvementPercentage);
+      }
 
-      const shouldDecrease = challengeType === 0 || challengeType === 1;
-
-      const multiplier = shouldDecrease
-        ? 1 - Math.abs(improvementPercentage) / 100
-        : 1 + Math.abs(improvementPercentage) / 100;
+      const multiplier = 1 + Math.abs(improvementPercentage) / 100;
 
       return averageMetric * multiplier;
     }
   };
+
+  const handleHolisticTypeSelect = (value: string) => {
+    setSelectedHolisticType(value as "all-around" | "sleep" | "workout");
+    form.setValue("holisticType", value as "all-around" | "sleep" | "workout");
+    switch (value) {
+      case "all-around":
+        form.setValue("challengeType", "4");
+        break;
+      case "sleep":
+        form.setValue("challengeType", "5");
+        break;
+      case "workout":
+        form.setValue("challengeType", "6");
+        break;
+    }
+  };
+
+  const handleTabClick = () => {
+    const currentIsTwoSided = form.getValues("isTwoSided");
+    form.reset({
+      endTime: "",
+      challengeType: "",
+      holisticType: undefined,
+      targetType: "improvement",
+      challengeTarget: "",
+      improvementPercentage: "",
+      customImprovement: "",
+      amount: "",
+      isTwoSided: currentIsTwoSided,
+    });
+    setSelectedHolisticType(null);
+  };
+
+  function getChallengeTypeFromHolistic(holisticType: string): number {
+    switch (holisticType) {
+      case "all-around":
+        return 4;
+      case "sleep":
+        return 5;
+      case "workout":
+        return 6;
+      default:
+        return 0;
+    }
+  }
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     if (!selectedUser?.smartAccountAddress) {
@@ -233,6 +295,10 @@ const Users = () => {
 
     setIsPending(true);
 
+    const challengeType = values.holisticType
+      ? getChallengeTypeFromHolistic(values.holisticType)
+      : Number(values.challengeType);
+
     const challengeTarget = calculateChallengeTarget(values);
 
     const approveTokencallData = encodeFunctionData({
@@ -249,7 +315,7 @@ const Users = () => {
         tokenAddress,
         BigInt(values.amount),
         BigInt(new Date(values.endTime).getTime() / 1000),
-        Number(values.challengeType),
+        challengeType,
         BigInt(Math.round(challengeTarget)),
         values.isTwoSided,
       ],
@@ -321,6 +387,14 @@ const Users = () => {
     }
   }, [data]);
 
+  useEffect(() => {
+    if (!form.watch("holisticType")) {
+      form.setValue("improvementPercentage", "");
+      form.setValue("customImprovement", "");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.watch("challengeType")]);
+
   return (
     <main className="min-w-sm flex-1 p-6 sm:max-w-full">
       <div className="w-full">
@@ -334,7 +408,7 @@ const Users = () => {
               <UsersTableSkeleton />
             ) : (
               <>
-                {connectionStatus?.isConnected ? (
+                {!connectionStatus?.isConnected ? (
                   <>
                     {users.length >= 1 ? (
                       <>
@@ -474,7 +548,8 @@ const Users = () => {
         <DialogContent className="max-h-[700px] overflow-auto">
           <DialogHeader>
             <DialogTitle className="flex justify-center text-2xl font-bold">
-              Add Challenge Details
+              Add {form.getValues("isTwoSided") ? "Challenge" : "Sponsor"}{" "}
+              Details
             </DialogTitle>
           </DialogHeader>
           <Card className="p-6">
@@ -502,148 +577,228 @@ const Users = () => {
                   )}
                 />
 
-                <FormField
-                  control={form.control}
-                  name="challengeType"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Challenge Type</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        value={field.value}
-                        disabled={isPending}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select metric" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="0">Calories</SelectItem>
-                          <SelectItem value="1">Strain</SelectItem>
-                          <SelectItem value="2">Hours of Sleep</SelectItem>
-                          <SelectItem value="3">Recovery Percentage</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {!isLoading && averageMetric > 0 && (
-                  <div>
-                    <Label>
-                      Last 7 Days User Average{" "}
-                      {getChallengeTypeString(
-                        Number(form.watch("challengeType") || "0"),
-                      )}
-                      : {averageMetric.toFixed(2)}
-                    </Label>
-                  </div>
-                )}
-
-                <FormField
-                  control={form.control}
-                  name="targetType"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Target Type</FormLabel>
-                      <FormControl>
-                        <RadioGroup
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                          disabled={isPending}
+                <Tabs defaultValue="holistic" onValueChange={handleTabClick}>
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="holistic">
+                      Holistic (Recommended)
+                    </TabsTrigger>
+                    <TabsTrigger value="isolated">Isolated</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="holistic">
+                    <div className="grid grid-cols-2 gap-4">
+                      {holisticTypes.map((type) => (
+                        <Card
+                          key={type.value}
+                          className={`min-h-[50px] cursor-pointer ${
+                            selectedHolisticType === type.value
+                              ? "border-2 border-blue-500"
+                              : ""
+                          } ${type.disabled ? "opacity-50" : ""}`}
+                          onClick={() =>
+                            !type.disabled &&
+                            handleHolisticTypeSelect(type.value)
+                          }
                         >
-                          <FormItem>
-                            <FormLabel className="flex items-center gap-2">
-                              <RadioGroupItem value="improvement" />
-                              <span>Percent</span>
-                            </FormLabel>
-                          </FormItem>
-                          <FormItem>
-                            <FormLabel className="flex items-center gap-2">
-                              <RadioGroupItem value="direct" />
-                              <span>Absolute</span>
-                            </FormLabel>
-                          </FormItem>
-                        </RadioGroup>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                {form.watch("targetType") === "direct" && (
-                  <FormField
-                    control={form.control}
-                    name="challengeTarget"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>
-                          Add{" "}
-                          {getChallengeTypeString(
-                            Number(form.watch("challengeType")),
-                          )}{" "}
-                          Challenge Target
-                        </FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="Challenge Target"
-                            disabled={isPending}
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                )}
-                {form.watch("targetType") === "improvement" && (
-                  <>
+                          <CardHeader>
+                            <CardTitle className="text-md">
+                              {type.title}
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="text-sm">
+                            <ul className="list-disc">
+                              {type.items.map((item, index) => (
+                                <li key={index}>{item}</li>
+                              ))}
+                            </ul>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+
                     <FormField
                       control={form.control}
-                      name="improvementPercentage"
+                      name="holisticType"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Improvement Percentage</FormLabel>
                           <FormControl>
+                            <input type="hidden" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {form.watch("holisticType") && (
+                      <FormField
+                        control={form.control}
+                        name="improvementPercentage"
+                        render={({ field }) => (
+                          <FormItem className="mt-3">
+                            <FormLabel>Improvement Percentage</FormLabel>
                             <Select
-                              onValueChange={(value) => {
-                                if (value === "custom") {
-                                  field.onChange(null);
-                                  form.setValue("customImprovement", null);
-                                } else {
-                                  field.onChange(parseInt(value, 10));
-                                  form.setValue("customImprovement", null);
-                                }
-                              }}
-                              value={field.value?.toString() ?? "custom"}
+                              onValueChange={field.onChange}
+                              value={field.value ?? undefined}
+                              disabled={
+                                isPending || !form.watch("holisticType")
+                              }
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select percentage" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="5">
+                                  5% Improvement
+                                </SelectItem>
+                                <SelectItem value="10">
+                                  10% Improvement
+                                </SelectItem>
+                                <SelectItem value="15">
+                                  15% Improvement
+                                </SelectItem>
+                                <SelectItem value="20">
+                                  20% Improvement
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
+                  </TabsContent>
+                  <TabsContent value="isolated">
+                    <FormField
+                      control={form.control}
+                      name="challengeType"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Challenge Type</FormLabel>
+                          <Select
+                            onValueChange={(value) => {
+                              field.onChange(value);
+                              form.setValue("improvementPercentage", "");
+                              form.setValue("customImprovement", "");
+                            }}
+                            value={field.value}
+                            disabled={isPending}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select metric" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="0">Calories</SelectItem>
+                              <SelectItem value="1">Strain</SelectItem>
+                              <SelectItem value="2">Hours of Sleep</SelectItem>
+                              <SelectItem value="3">
+                                Recovery Percentage
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {!isLoading &&
+                      form.watch("challengeType") &&
+                      averageMetric > 0 && (
+                        <div className="mt-2">
+                          <Label>
+                            Last 7 Days User Average{" "}
+                            {getChallengeTypeString(
+                              Number(form.watch("challengeType")),
+                            )}
+                            : {averageMetric.toFixed(2)}
+                          </Label>
+                        </div>
+                      )}
+
+                    <FormField
+                      control={form.control}
+                      name="targetType"
+                      render={({ field }) => (
+                        <FormItem className="mt-3">
+                          <FormLabel>Target Type</FormLabel>
+                          <FormControl>
+                            <RadioGroup
+                              onValueChange={field.onChange}
+                              defaultValue={field.value}
                               disabled={isPending}
                             >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select percentage" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {(form.watch("challengeType") === "0" ||
-                                  form.watch("challengeType") === "1") && (
-                                  <>
-                                    <SelectItem value="-5">
-                                      5% Decrease
-                                    </SelectItem>
-                                    <SelectItem value="-10">
-                                      10% Decrease
-                                    </SelectItem>
-                                    <SelectItem value="-15">
-                                      15% Decrease
-                                    </SelectItem>
-                                    <SelectItem value="-20">
-                                      20% Decrease
-                                    </SelectItem>
-                                  </>
-                                )}
+                              <FormItem>
+                                <FormLabel className="flex items-center gap-2">
+                                  <RadioGroupItem value="improvement" />
+                                  <span>Percentage</span>
+                                </FormLabel>
+                              </FormItem>
+                              <FormItem>
+                                <FormLabel className="flex items-center gap-2">
+                                  <RadioGroupItem value="direct" />
+                                  <span>Quantity</span>
+                                </FormLabel>
+                              </FormItem>
+                            </RadioGroup>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                                {(form.watch("challengeType") === "2" ||
-                                  form.watch("challengeType") === "3") && (
-                                  <>
+                    {form.watch("targetType") === "direct" && (
+                      <FormField
+                        control={form.control}
+                        name="challengeTarget"
+                        render={({ field }) => (
+                          <FormItem className="mt-3">
+                            <FormLabel>
+                              Add{" "}
+                              {getChallengeTypeString(
+                                Number(form.watch("challengeType") ?? "0"),
+                              )}{" "}
+                              Challenge Target
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                placeholder="Challenge Target"
+                                disabled={isPending}
+                                {...field}
+                                onChange={(e) => field.onChange(e.target.value)}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
+
+                    {!form.watch("holisticType") &&
+                      form.watch("targetType") === "improvement" && (
+                        <FormField
+                          control={form.control}
+                          name="improvementPercentage"
+                          render={({ field }) => (
+                            <FormItem className="mt-3">
+                              <FormLabel>Improvement Percentage</FormLabel>
+                              <FormControl>
+                                <Select
+                                  onValueChange={(value) => {
+                                    field.onChange(value);
+                                    if (value === "custom") {
+                                      form.setValue("customImprovement", "");
+                                    }
+                                  }}
+                                  value={field.value ?? undefined}
+                                  disabled={isPending}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select percentage" />
+                                  </SelectTrigger>
+                                  <SelectContent>
                                     <SelectItem value="5">
                                       5% Increase
                                     </SelectItem>
@@ -656,66 +811,51 @@ const Users = () => {
                                     <SelectItem value="20">
                                       20% Increase
                                     </SelectItem>
-                                  </>
-                                )}
-
-                                <SelectItem value="custom">
-                                  Custom Percentage
-                                </SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
+                                    <SelectItem value="custom">
+                                      Custom
+                                    </SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
                       )}
-                    />
 
-                    {(form.watch("improvementPercentage") === null ||
-                      form.watch("targetType") === "direct") && (
-                      <FormField
-                        control={form.control}
-                        name={
-                          form.watch("targetType") === "direct"
-                            ? "challengeTarget"
-                            : "customImprovement"
-                        }
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>
-                              {form.watch("targetType") === "direct"
-                                ? "Challenge Target"
-                                : "Custom Improvement"}
-                            </FormLabel>
-                            <FormControl>
-                              <Input
-                                type="number"
-                                placeholder={
-                                  form.watch("targetType") === "direct"
-                                    ? "Challenge Target"
-                                    : "Custom Improvement Percentage"
-                                }
-                                {...field}
-                                min="1"
-                                max="100"
-                                onChange={(e) => {
-                                  const value = Number(e.target.value);
-                                  if (value >= 1 && value <= 100) {
-                                    field.onChange(value);
-                                  } else if (e.target.value === "") {
-                                    field.onChange(null);
-                                  }
-                                }}
-                                value={field.value ?? ""}
-                                disabled={isPending}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    )}
-                  </>
-                )}
+                    {!form.watch("holisticType") &&
+                      form.watch("targetType") === "improvement" &&
+                      form.watch("improvementPercentage") === "custom" && (
+                        <FormField
+                          control={form.control}
+                          name="customImprovement"
+                          render={({ field }) => (
+                            <FormItem className="mt-3">
+                              <FormLabel>
+                                Custom Improvement Percentage
+                              </FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  placeholder="Enter custom percentage"
+                                  {...field}
+                                  min={0}
+                                  onChange={(e) => {
+                                    const value = e.target.value;
+                                    if (value === "" || Number(value) <= 100) {
+                                      field.onChange(value);
+                                    }
+                                  }}
+                                  disabled={isPending}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      )}
+                  </TabsContent>
+                </Tabs>
 
                 <FormField
                   control={form.control}

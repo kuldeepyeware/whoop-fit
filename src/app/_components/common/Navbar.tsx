@@ -133,7 +133,7 @@ const Navbar = () => {
             key={index}
             href={link.href}
             className="text-lg font-medium hover:text-primary/70"
-            prefetch={true}
+            prefetch={false}
           >
             {link.name}
           </Link>

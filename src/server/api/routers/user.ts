@@ -1,8 +1,4 @@
-import {
-  createTRPCRouter,
-  publicProcedure,
-  protectedProcedure,
-} from "@/server/api/trpc";
+import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import * as z from "zod";
 import { env } from "@/env";
@@ -15,132 +11,57 @@ import {
   getAverageSleepHours,
   getAverageStrain,
 } from "@/data/user";
-// import { getWhoopAccessToken } from "@/data/whoop";
-
-const baseLoginSchema = z.object({
-  privyId: z.string().min(1, { message: "PrivyId is required" }),
-  email: z
-    .string()
-    .min(1, { message: "Email is required" })
-    .email("Not a valid email"),
-  embeddedAddress: z
-    .string()
-    .min(1, { message: "Embedded Address is required" }),
-  smartAccountAddress: z.string().optional(),
-});
-
-const emailLoginSchema = baseLoginSchema.extend({
-  method: z.literal("email"),
-});
-
-const googleLoginSchema = baseLoginSchema.extend({
-  method: z.literal("google"),
-  name: z.string().min(1, { message: "Name is required" }),
-});
-
-const registerSchema = z.discriminatedUnion("method", [
-  emailLoginSchema,
-  googleLoginSchema,
-]);
 
 export const userRouter = createTRPCRouter({
-  register: publicProcedure
-    .input(registerSchema)
+  checkRegistration: protectedProcedure
+    .input(
+      z.object({
+        privyUserId: z.string().optional(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const user = await ctx.db.user.findUnique({
+        where: { privyId: input.privyUserId },
+      });
+
+      return { isRegistered: !!user };
+    }),
+
+  register: protectedProcedure
+    .input(
+      z.object({
+        method: z.enum(["email", "google"]),
+        privyId: z.string(),
+        email: z.string().email(),
+        embeddedAddress: z.string(),
+        smartAccountAddress: z.string(),
+        name: z.string().optional(),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
-      const baseUserData = {
-        email: input.email,
-        privyId: input.privyId,
-        embeddedAddress: input.embeddedAddress,
-        smartAccountAddress: input.smartAccountAddress,
-      };
-
-      const userData =
-        input.method === "google"
-          ? { ...baseUserData, name: input.name }
-          : baseUserData;
-
-      const existingUser = await ctx.db.user.findFirst({
-        where: {
-          OR: [{ email: userData.email }, { privyId: userData.privyId }],
-        },
+      const existingUser = await ctx.db.user.findUnique({
+        where: { privyId: input.privyId },
       });
 
       if (existingUser) {
         throw new TRPCError({
           code: "CONFLICT",
-          message: "User already exists",
+          message: "User already registered",
         });
       }
 
-      try {
-        await ctx.db.user.create({
-          data: userData,
-        });
-      } catch (error) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to create account! Try again",
-        });
-      }
-
-      return { success: "Registration successful!" };
-    }),
-
-  updateSmartAccount: protectedProcedure
-    .input(
-      z.object({
-        smartAccountAddress: z.string(),
-      }),
-    )
-    .mutation(async ({ ctx, input }) => {
-      const { smartAccountAddress } = input;
-
-      try {
-        const updatedUser = await ctx.db.user.update({
-          where: { privyId: ctx.privyUserId },
-          data: { smartAccountAddress: smartAccountAddress },
-        });
-
-        if (!updatedUser) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "User not found",
-          });
-        }
-
-        return { success: "Smart account address updated successfully!" };
-      } catch (error) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to add smart account account! Try again",
-        });
-      }
-    }),
-
-  getSmartAccountStatus: protectedProcedure.query(async ({ ctx }) => {
-    try {
-      const user = await ctx.db.user.findUnique({
-        where: { privyId: ctx.privyUserId },
+      const newUser = await ctx.db.user.create({
+        data: {
+          privyId: input.privyId,
+          email: input.email,
+          name: input.name,
+          embeddedAddress: input.embeddedAddress,
+          smartAccountAddress: input.smartAccountAddress,
+        },
       });
 
-      if (!user) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "User not found",
-        });
-      }
-
-      return {
-        isConnected: !!user.smartAccountAddress,
-        storedAddress: user.smartAccountAddress ?? null,
-      };
-    } catch (error) {
-      throw new TRPCError({
-        code: "INTERNAL_SERVER_ERROR",
-        message: "Failed to get smart account status",
-      });
-    }
-  }),
+      return { success: true, user: newUser };
+    }),
 
   // trial: protectedProcedure.query(async ({ ctx }) => {
   //   const user = await ctx.db.user.findUnique({
@@ -157,7 +78,7 @@ export const userRouter = createTRPCRouter({
   //   // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain
   //   const token = await getWhoopAccessToken(user?.whoopUserId!);
 
-  //   console.log("Token jdgjjjjfghjfghfgfghfhgfhg", token);
+  //   console.log("Token", token);
   // }),
 
   getUsersWithMetrics: protectedProcedure
@@ -309,7 +230,8 @@ export const userRouter = createTRPCRouter({
           const totalCalories = whoopData.whoopCycles
             .filter(
               (cycle) =>
-                isWithinChallengePeriod(new Date(cycle.end!)) &&
+                (cycle.end === null ||
+                  isWithinChallengePeriod(new Date(cycle.end))) &&
                 cycle.scoreState === "SCORED",
             )
             .reduce((sum, cycle) => sum + cycle.kilojoule * 0.239006, 0); // Convert kJ to kcal
@@ -322,7 +244,8 @@ export const userRouter = createTRPCRouter({
           const totalStrain = whoopData.whoopCycles
             .filter(
               (cycle) =>
-                isWithinChallengePeriod(new Date(cycle.end!)) &&
+                (cycle.end === null ||
+                  isWithinChallengePeriod(new Date(cycle.end))) &&
                 cycle.scoreState === "SCORED",
             )
             .reduce((sum, cycle) => sum + cycle.strain, 0);
@@ -361,6 +284,111 @@ export const userRouter = createTRPCRouter({
 
           const averageRecoveryPerDay = totalRecovery / challengeDurationDays;
           targetReached = averageRecoveryPerDay >= Number(challengeTarget);
+          break;
+
+        case 4: // All-Around Avenger
+          const sleepPerformance = whoopData.whoopSleeps
+            .filter(
+              (sleep) =>
+                isWithinChallengePeriod(new Date(sleep.end)) &&
+                sleep.scoreState === "SCORED" &&
+                !sleep.nap,
+            )
+            .reduce(
+              (sum, sleep) => sum + sleep.sleepPerformancePercentage! ?? 0,
+              0,
+            );
+
+          const recovery = whoopData.whoopRecoveries
+            .filter(
+              (recovery) =>
+                isWithinChallengePeriod(new Date(recovery.updatedAtByWhoop)) &&
+                recovery.scoreState === "SCORED" &&
+                !recovery.userCalibrating,
+            )
+            .reduce((sum, recovery) => sum + recovery.recoveryScore, 0);
+
+          const strain = whoopData.whoopCycles
+            .filter(
+              (cycle) =>
+                isWithinChallengePeriod(new Date(cycle.end!)) &&
+                cycle.scoreState === "SCORED",
+            )
+            .reduce((sum, cycle) => sum + cycle.strain, 0);
+
+          const calories = whoopData.whoopCycles
+            .filter(
+              (cycle) =>
+                isWithinChallengePeriod(new Date(cycle.end!)) &&
+                cycle.scoreState === "SCORED",
+            )
+            .reduce((sum, cycle) => sum + cycle.kilojoule * 0.239006, 0);
+
+          const averageAllAround =
+            (sleepPerformance / challengeDurationDays +
+              recovery / challengeDurationDays +
+              strain / challengeDurationDays +
+              calories / challengeDurationDays) /
+            4;
+
+          targetReached = averageAllAround >= Number(challengeTarget);
+          break;
+
+        case 5: // Sleep Sage
+          const sleepPerformanceData = whoopData.whoopSleeps.filter(
+            (sleep) =>
+              isWithinChallengePeriod(new Date(sleep.end)) &&
+              sleep.scoreState === "SCORED" &&
+              !sleep.nap,
+          );
+
+          const avgSleepPerformance =
+            sleepPerformanceData.reduce(
+              (sum, sleep) => sum + sleep.sleepPerformancePercentage! ?? 0,
+              0,
+            ) / sleepPerformanceData.length;
+
+          const avgSleepConsistency =
+            sleepPerformanceData.reduce(
+              (sum, sleep) => sum + sleep.sleepConsistencyPercentage! ?? 0,
+              0,
+            ) / sleepPerformanceData.length;
+
+          const avgSleepEfficiency =
+            sleepPerformanceData.reduce(
+              (sum, sleep) => sum + sleep.sleepEfficiencyPercentage! ?? 0,
+              0,
+            ) / sleepPerformanceData.length;
+
+          const averageSleepSage =
+            (avgSleepPerformance + avgSleepConsistency + avgSleepEfficiency) /
+            3;
+
+          targetReached = averageSleepSage >= Number(challengeTarget);
+          break;
+
+        case 6: // Workout Wizard
+          const workoutData = whoopData.whoopCycles.filter(
+            (cycle) =>
+              (cycle.end === null ||
+                isWithinChallengePeriod(new Date(cycle.end))) &&
+              cycle.scoreState === "SCORED",
+          );
+
+          const avgStrain =
+            workoutData.reduce((sum, cycle) => sum + cycle.strain, 0) /
+            challengeDurationDays;
+
+          const avgCalories =
+            workoutData.reduce(
+              (sum, cycle) => sum + cycle.kilojoule * 0.239006,
+              0,
+            ) / challengeDurationDays;
+
+          const averageWorkoutWizard = (avgStrain + avgCalories) / 2;
+
+          targetReached = averageWorkoutWizard >= Number(challengeTarget);
+
           break;
 
         default:
@@ -438,7 +466,7 @@ export const userRouter = createTRPCRouter({
       const challengerData = await ctx.db.user.findUnique({
         where: { smartAccountAddress: challenger },
         select: {
-          whoopWorkouts: true,
+          whoopCycles: true,
           whoopRecoveries: true,
           whoopSleeps: true,
         },
@@ -447,7 +475,7 @@ export const userRouter = createTRPCRouter({
       const challengedData = await ctx.db.user.findUnique({
         where: { smartAccountAddress: challenged },
         select: {
-          whoopWorkouts: true,
+          whoopCycles: true,
           whoopRecoveries: true,
           whoopSleeps: true,
         },
@@ -477,57 +505,157 @@ export const userRouter = createTRPCRouter({
       const calculateAverage = (userData: typeof challengerData) => {
         switch (challengeType) {
           case 0: // Calories
-            return (
-              userData.whoopWorkouts
-                .filter(
-                  (workout) =>
-                    isWithinChallengePeriod(new Date(workout.end)) &&
-                    workout.scoreState === "SCORED",
-                )
-                .reduce(
-                  (sum, workout) => sum + workout.kilojoule * 0.239006,
-                  0,
-                ) / challengeDurationDays
-            );
+            const totalCalories = userData.whoopCycles
+              .filter(
+                (cycle) =>
+                  (cycle.end === null ||
+                    isWithinChallengePeriod(new Date(cycle.end))) &&
+                  cycle.scoreState === "SCORED",
+              )
+              .reduce((sum, cycle) => sum + cycle.kilojoule * 0.239006, 0); // Convert kJ to kcal
+
+            return totalCalories / challengeDurationDays;
+
           case 1: // Strain
-            return (
-              userData.whoopWorkouts
-                .filter(
-                  (workout) =>
-                    isWithinChallengePeriod(new Date(workout.end)) &&
-                    workout.scoreState === "SCORED",
-                )
-                .reduce((sum, workout) => sum + workout.strain, 0) /
-              challengeDurationDays
-            );
+            const totalStrain = userData.whoopCycles
+              .filter(
+                (cycle) =>
+                  (cycle.end === null ||
+                    isWithinChallengePeriod(new Date(cycle.end))) &&
+                  cycle.scoreState === "SCORED",
+              )
+              .reduce((sum, cycle) => sum + cycle.strain, 0);
+
+            return totalStrain / challengeDurationDays;
+
           case 2: // Hours of Sleep
-            return (
-              userData.whoopSleeps
-                .filter(
-                  (sleep) =>
-                    isWithinChallengePeriod(new Date(sleep.end)) &&
-                    sleep.scoreState === "SCORED" &&
-                    !sleep.nap,
-                )
-                .reduce(
-                  (sum, sleep) => sum + sleep.totalInBedTimeMilli / 3600000,
-                  0,
-                ) / challengeDurationDays
-            );
+            const totalSleepHours = userData.whoopSleeps
+              .filter(
+                (sleep) =>
+                  isWithinChallengePeriod(new Date(sleep.end)) &&
+                  sleep.scoreState === "SCORED" &&
+                  !sleep.nap,
+              )
+              .reduce(
+                (sum, sleep) => sum + sleep.totalInBedTimeMilli / 3600000,
+                0,
+              ); // Convert ms to hours
+
+            return totalSleepHours / challengeDurationDays;
+
           case 3: // Recovery
+            const totalRecovery = userData.whoopRecoveries
+              .filter(
+                (recovery) =>
+                  isWithinChallengePeriod(
+                    new Date(recovery.updatedAtByWhoop),
+                  ) &&
+                  recovery.scoreState === "SCORED" &&
+                  !recovery.userCalibrating,
+              )
+              .reduce((sum, recovery) => sum + recovery.recoveryScore, 0);
+
+            return totalRecovery / challengeDurationDays;
+
+          case 4: // All-Around Avenger
+            const sleepPerformance = userData.whoopSleeps
+              .filter(
+                (sleep) =>
+                  isWithinChallengePeriod(new Date(sleep.end)) &&
+                  sleep.scoreState === "SCORED" &&
+                  !sleep.nap,
+              )
+              .reduce(
+                (sum, sleep) => sum + sleep.sleepPerformancePercentage! ?? 0,
+                0,
+              );
+
+            const recovery = userData.whoopRecoveries
+              .filter(
+                (recovery) =>
+                  isWithinChallengePeriod(
+                    new Date(recovery.updatedAtByWhoop),
+                  ) &&
+                  recovery.scoreState === "SCORED" &&
+                  !recovery.userCalibrating,
+              )
+              .reduce((sum, recovery) => sum + recovery.recoveryScore, 0);
+
+            const strain = userData.whoopCycles
+              .filter(
+                (cycle) =>
+                  isWithinChallengePeriod(new Date(cycle.end!)) &&
+                  cycle.scoreState === "SCORED",
+              )
+              .reduce((sum, cycle) => sum + cycle.strain, 0);
+
+            const calories = userData.whoopCycles
+              .filter(
+                (cycle) =>
+                  isWithinChallengePeriod(new Date(cycle.end!)) &&
+                  cycle.scoreState === "SCORED",
+              )
+              .reduce((sum, cycle) => sum + cycle.kilojoule * 0.239006, 0);
+
             return (
-              userData.whoopRecoveries
-                .filter(
-                  (recovery) =>
-                    isWithinChallengePeriod(
-                      new Date(recovery.updatedAtByWhoop),
-                    ) &&
-                    recovery.scoreState === "SCORED" &&
-                    !recovery.userCalibrating,
-                )
-                .reduce((sum, recovery) => sum + recovery.recoveryScore, 0) /
-              challengeDurationDays
+              (sleepPerformance / challengeDurationDays +
+                recovery / challengeDurationDays +
+                strain / challengeDurationDays +
+                calories / challengeDurationDays) /
+              4
             );
+
+          case 5: // Sleep Sage
+            const sleepPerformanceData = userData.whoopSleeps.filter(
+              (sleep) =>
+                isWithinChallengePeriod(new Date(sleep.end)) &&
+                sleep.scoreState === "SCORED" &&
+                !sleep.nap,
+            );
+
+            const avgSleepPerformance =
+              sleepPerformanceData.reduce(
+                (sum, sleep) => sum + sleep.sleepPerformancePercentage! ?? 0,
+                0,
+              ) / sleepPerformanceData.length;
+
+            const avgSleepConsistency =
+              sleepPerformanceData.reduce(
+                (sum, sleep) => sum + sleep.sleepConsistencyPercentage! ?? 0,
+                0,
+              ) / sleepPerformanceData.length;
+
+            const avgSleepEfficiency =
+              sleepPerformanceData.reduce(
+                (sum, sleep) => sum + sleep.sleepEfficiencyPercentage! ?? 0,
+                0,
+              ) / sleepPerformanceData.length;
+
+            return (
+              (avgSleepPerformance + avgSleepConsistency + avgSleepEfficiency) /
+              3
+            );
+
+          case 6: // Workout Wizard
+            const workoutData = userData.whoopCycles.filter(
+              (cycle) =>
+                (cycle.end === null ||
+                  isWithinChallengePeriod(new Date(cycle.end))) &&
+                cycle.scoreState === "SCORED",
+            );
+
+            const avgStrain =
+              workoutData.reduce((sum, cycle) => sum + cycle.strain, 0) /
+              challengeDurationDays;
+
+            const avgCalories =
+              workoutData.reduce(
+                (sum, cycle) => sum + cycle.kilojoule * 0.239006,
+                0,
+              ) / challengeDurationDays;
+
+            return (avgStrain + avgCalories) / 2;
+
           default:
             throw new TRPCError({
               code: "BAD_REQUEST",
