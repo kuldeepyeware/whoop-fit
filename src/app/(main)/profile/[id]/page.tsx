@@ -194,8 +194,16 @@ const ProfilePage = ({ params }: { params: { id: string } }) => {
       }
 
       const multiplier = 1 + Math.abs(improvementPercentage) / 100;
+      let target = averageMetric * multiplier;
 
-      return averageMetric * multiplier;
+      const challengeType = Number(values.challengeType);
+      if (challengeType === 1) {
+        target = Math.min(target, 21);
+      } else if (challengeType === 3) {
+        target = Math.min(target, 100);
+      }
+
+      return target;
     }
   };
 
@@ -467,7 +475,7 @@ const ProfilePage = ({ params }: { params: { id: string } }) => {
                       {Number(
                         profileData?.whoopSleeps[0]
                           ?.sleepEfficiencyPercentage ?? 0,
-                      ).toFixed(1)}
+                      ).toFixed(2)}
                       %
                     </div>
                     <div className="text-sm text-muted-foreground">
@@ -477,7 +485,10 @@ const ProfilePage = ({ params }: { params: { id: string } }) => {
 
                   <Card className="p-4">
                     <div className="text-4xl font-bold">
-                      {profileData?.whoopRecoveries[0]?.recoveryScore ?? 0}
+                      {Number(
+                        profileData?.whoopRecoveries[0]?.recoveryScore ?? 0,
+                      ).toFixed(2)}
+                      %
                     </div>
                     <div className="text-sm text-muted-foreground">
                       Latest Recovery Score
@@ -767,7 +778,27 @@ const ProfilePage = ({ params }: { params: { id: string } }) => {
                                 placeholder="Challenge Target"
                                 disabled={isPending}
                                 {...field}
-                                onChange={(e) => field.onChange(e.target.value)}
+                                onChange={(e) => {
+                                  const challengeType = Number(
+                                    form.watch("challengeType") ?? "0",
+                                  );
+                                  let value = parseFloat(e.target.value);
+
+                                  if (challengeType === 1) {
+                                    value = Math.min(value, 21);
+                                  } else if (challengeType === 3) {
+                                    value = Math.min(value, 100);
+                                  }
+
+                                  field.onChange(value.toString());
+                                }}
+                                max={
+                                  Number(form.watch("challengeType")) === 1
+                                    ? 21
+                                    : Number(form.watch("challengeType")) === 3
+                                      ? 100
+                                      : undefined
+                                }
                               />
                             </FormControl>
                             <FormMessage />

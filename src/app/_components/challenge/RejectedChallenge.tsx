@@ -11,12 +11,7 @@ import {
 } from "@/app/_components/ui/card";
 import { Badge } from "@/app/_components/ui/badge";
 import { type Challenge } from "@/schemas/types/challengeTypes";
-import {
-  // formatTimeRemaining,
-  getBadgeVariant,
-  getChallengeTypeString,
-} from "@/lib/challenge";
-// import { ClockIcon } from "lucide-react";
+import { getBadgeVariant, getChallengeTypeString } from "@/lib/challenge";
 import ChallengeCardSkeleton from "../skeleton/ChallengeCardSkeleton";
 
 type RejectedChallengeProps = {
@@ -68,7 +63,9 @@ const RejectedChallenge: React.FC<RejectedChallengeProps> = ({
                   <div className="mb-4">
                     <p className="text-sm text-gray-600">
                       <span className="font-semibold">Target:</span>{" "}
-                      {challenge.challengeTarget.toString()}
+                      {[4, 5, 6].includes(challenge.challengeType)
+                        ? `${challenge.challengeTarget.toString()}% Improvement`
+                        : challenge.challengeTarget.toString()}
                     </p>
                     <p className="text-sm text-gray-600">
                       <span className="font-semibold">Amount:</span>{" "}

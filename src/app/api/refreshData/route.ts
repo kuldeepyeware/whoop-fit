@@ -26,7 +26,6 @@ export const GET = async (req: NextRequest) => {
         },
       },
     });
-    console.log(users);
     for (const user of users) {
       try {
         const { access_token, refresh_token, expires_in } =

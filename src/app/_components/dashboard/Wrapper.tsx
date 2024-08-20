@@ -17,15 +17,18 @@ const DashboardWrapper: React.FC<DashboardWrapperProps> = ({ children }) => {
   const [isRegistered, setIsRegistered] = useState<boolean | null>(null);
   const router = useRouter();
 
-  const { data: registrationStatus, isLoading: isCheckingRegistration } =
-    api.user.checkRegistration.useQuery(
-      { privyUserId: user?.id ?? "" },
-      {
-        enabled: authenticated && !!user?.id,
-        staleTime: Infinity,
-        // cacheTime: 24 * 60 * 60 * 1000,
-      },
-    );
+  const {
+    data: registrationStatus,
+    refetch,
+    isLoading: isCheckingRegistration,
+  } = api.user.checkRegistration.useQuery(
+    { privyUserId: user?.id ?? "" },
+    {
+      enabled: authenticated && !!user?.id,
+      staleTime: Infinity,
+      // cacheTime: 24 * 60 * 60 * 1000,
+    },
+  );
 
   const register = api.user.register.useMutation({
     onSuccess: () => {
@@ -36,17 +39,21 @@ const DashboardWrapper: React.FC<DashboardWrapperProps> = ({ children }) => {
     },
   });
 
-  useEffect(() => {
-    if (!authenticated) {
-      router.push("/login");
-    }
-  }, [authenticated, router]);
+  const refetchStatus = async () => {
+    await refetch();
+  };
 
   useEffect(() => {
     if (registrationStatus) {
       setIsRegistered(registrationStatus.isRegistered);
     }
-  }, [registrationStatus]);
+  }, [registrationStatus, refetch]);
+
+  useEffect(() => {
+    if (!authenticated) {
+      router.push("/login");
+    }
+  }, [authenticated, router]);
 
   useEffect(() => {
     if (
@@ -66,6 +73,7 @@ const DashboardWrapper: React.FC<DashboardWrapperProps> = ({ children }) => {
       };
 
       register.mutate(registerData);
+      refetchStatus().catch((error) => console.error(error));
     }
   }, [
     authenticated,
@@ -73,6 +81,7 @@ const DashboardWrapper: React.FC<DashboardWrapperProps> = ({ children }) => {
     isRegistered,
     smartAccountAddress,
     isCheckingRegistration,
+    refetch,
   ]);
 
   return <>{children}</>;

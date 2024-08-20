@@ -114,6 +114,38 @@ const holisticTypes = [
   },
 ];
 
+const calculateImprovementTrend = <T extends object>(
+  data: T[],
+  getValue: (item: T) => number,
+  getDate: (item: T) => Date,
+): number => {
+  const sortedData = [...data].sort((a, b) => {
+    const dateA = getDate(a);
+    const dateB = getDate(b);
+    return dateA.getTime() - dateB.getTime();
+  });
+
+  let totalChange = 0;
+  let validComparisons = 0;
+
+  for (let i = 1; i < sortedData.length; i++) {
+    const prevItem = sortedData[i - 1];
+    const currItem = sortedData[i];
+
+    if (prevItem && currItem) {
+      const prevValue = getValue(prevItem);
+      const currValue = getValue(currItem);
+
+      if (prevValue !== 0) {
+        totalChange += (currValue - prevValue) / prevValue;
+        validComparisons++;
+      }
+    }
+  }
+
+  return validComparisons > 0 ? (totalChange / validComparisons) * 100 : 0;
+};
+
 export {
   getBadgeVariant,
   formatTimeRemaining,
@@ -121,4 +153,5 @@ export {
   getStartDateForLast7Days,
   getTomorrowDate,
   holisticTypes,
+  calculateImprovementTrend,
 };

@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error("Error processing webhook:", error);
 
-    await db.cron.create({
+    await db.webhook.create({
       data: {
         name: "Error",
       },
@@ -99,7 +99,7 @@ async function handleWorkoutUpdate(
   const workoutData = await fetchWorkoutFromId(userId, workoutId);
 
   await db.workout.upsert({
-    where: { workoutId: workoutId },
+    where: { workoutId: String(workoutId) },
     update: {
       createdAtByWhoop: workoutData.created_at,
       updatedAtByWhoop: workoutData.updated_at,
@@ -164,7 +164,7 @@ async function handleSleepUpdate(
   const sleepData = await fetchSleepFromId(userId, sleepId);
 
   await db.sleep.upsert({
-    where: { sleepId: sleepId },
+    where: { sleepId: String(sleepId) },
     update: {
       createdAtByWhoop: sleepData.created_at,
       updatedAtByWhoop: sleepData.updated_at,
@@ -249,7 +249,7 @@ async function handleRecoveryUpdate(
   const recoveryData = await fetchRecoveryFromId(userId, cycleId);
 
   await db.recovery.upsert({
-    where: { cycleId: cycleId, userId: userId },
+    where: { cycleId: String(cycleId), userId: String(userId) },
     update: {
       sleepId: String(recoveryData.sleep_id),
       createdAtByWhoop: recoveryData.created_at,

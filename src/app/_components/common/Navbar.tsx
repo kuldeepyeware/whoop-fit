@@ -115,8 +115,23 @@ const Navbar = () => {
   };
 
   const handleLogout = async () => {
-    await logout();
-    router.replace("/login");
+    try {
+      await logout();
+
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          router.push("/login");
+
+          setTimeout(() => {
+            if (window.location.pathname !== "/login") {
+              window.location.href = "/login";
+            }
+          }, 2000);
+        }, 250);
+      });
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
   };
 
   return (

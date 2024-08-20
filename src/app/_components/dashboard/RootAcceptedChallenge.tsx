@@ -34,10 +34,6 @@ const RootAcceptedChallenge = () => {
 
   const { toast } = useToast();
 
-  // const { data: ad } = api.user.trial.useQuery();
-
-  // console.log("ad", ad);
-
   const {
     data: acceptedChallengesData,
     refetch: refetchAcceptedChallenges,

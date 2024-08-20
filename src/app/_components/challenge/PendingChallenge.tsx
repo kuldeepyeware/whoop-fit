@@ -276,7 +276,9 @@ const PendingChallenge: React.FC<PendingChallengeProps> = ({
                   <div className="mb-4">
                     <p className="text-sm text-gray-600">
                       <span className="font-semibold">Target:</span>{" "}
-                      {challenge.challengeTarget.toString()}
+                      {[4, 5, 6].includes(challenge.challengeType)
+                        ? `${challenge.challengeTarget.toString()}% Improvement`
+                        : challenge.challengeTarget.toString()}
                     </p>
                     <p className="text-sm text-gray-600">
                       <span className="font-semibold">Amount:</span>{" "}

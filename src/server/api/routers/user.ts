@@ -4,13 +4,39 @@ import * as z from "zod";
 import { env } from "@/env";
 import { ethers } from "ethers";
 import { WhoopTokenAbi, WhoopTokenAddress } from "WhoopContract";
-import { getStartDateForLast7Days } from "@/lib/challenge";
+import {
+  calculateImprovementTrend,
+  getStartDateForLast7Days,
+} from "@/lib/challenge";
 import {
   getAverageCalories,
   getAverageRecovery,
   getAverageSleepHours,
   getAverageStrain,
 } from "@/data/user";
+
+type WhoopSleep = {
+  end: Date;
+  scoreState: string;
+  nap: boolean;
+  sleepPerformancePercentage: number | null;
+  sleepConsistencyPercentage: number | null;
+  sleepEfficiencyPercentage: number | null;
+};
+
+type WhoopRecovery = {
+  updatedAtByWhoop: Date;
+  scoreState: string;
+  userCalibrating: boolean;
+  recoveryScore: number;
+};
+
+type WhoopCycle = {
+  end: Date | null;
+  scoreState: string;
+  strain: number;
+  kilojoule: number;
+};
 
 export const userRouter = createTRPCRouter({
   checkRegistration: protectedProcedure
@@ -251,7 +277,9 @@ export const userRouter = createTRPCRouter({
             .reduce((sum, cycle) => sum + cycle.strain, 0);
 
           const averageStrainPerDay = totalStrain / challengeDurationDays;
+
           targetReached = averageStrainPerDay >= Number(challengeTarget);
+
           break;
 
         case 2: // Hours of Sleep
@@ -287,81 +315,91 @@ export const userRouter = createTRPCRouter({
           break;
 
         case 4: // All-Around Avenger
-          const sleepPerformance = whoopData.whoopSleeps
-            .filter(
-              (sleep) =>
-                isWithinChallengePeriod(new Date(sleep.end)) &&
+          const sleepPerformanceImprovement = calculateImprovementTrend(
+            whoopData.whoopSleeps.filter(
+              (sleep: WhoopSleep) =>
+                isWithinChallengePeriod(sleep.end) &&
                 sleep.scoreState === "SCORED" &&
                 !sleep.nap,
-            )
-            .reduce(
-              (sum, sleep) => sum + sleep.sleepPerformancePercentage! ?? 0,
-              0,
-            );
+            ),
+            (sleep: WhoopSleep) => sleep.sleepPerformancePercentage ?? 0,
+            (sleep: WhoopSleep) => sleep.end,
+          );
 
-          const recovery = whoopData.whoopRecoveries
-            .filter(
-              (recovery) =>
-                isWithinChallengePeriod(new Date(recovery.updatedAtByWhoop)) &&
+          const recoveryImprovement = calculateImprovementTrend(
+            whoopData.whoopRecoveries.filter(
+              (recovery: WhoopRecovery) =>
+                isWithinChallengePeriod(recovery.updatedAtByWhoop) &&
                 recovery.scoreState === "SCORED" &&
                 !recovery.userCalibrating,
-            )
-            .reduce((sum, recovery) => sum + recovery.recoveryScore, 0);
+            ),
+            (recovery: WhoopRecovery) => recovery.recoveryScore,
+            (recovery: WhoopRecovery) => recovery.updatedAtByWhoop,
+          );
 
-          const strain = whoopData.whoopCycles
-            .filter(
-              (cycle) =>
-                isWithinChallengePeriod(new Date(cycle.end!)) &&
+          const strainImprovement = calculateImprovementTrend(
+            whoopData.whoopCycles.filter(
+              (cycle: WhoopCycle) =>
+                cycle.end !== null &&
+                isWithinChallengePeriod(cycle.end) &&
                 cycle.scoreState === "SCORED",
-            )
-            .reduce((sum, cycle) => sum + cycle.strain, 0);
+            ),
+            (cycle: WhoopCycle) => cycle.strain,
+            (cycle: WhoopCycle) => cycle.end!,
+          );
 
-          const calories = whoopData.whoopCycles
-            .filter(
-              (cycle) =>
-                isWithinChallengePeriod(new Date(cycle.end!)) &&
+          const caloriesImprovement = calculateImprovementTrend(
+            whoopData.whoopCycles.filter(
+              (cycle: WhoopCycle) =>
+                cycle.end !== null &&
+                isWithinChallengePeriod(cycle.end) &&
                 cycle.scoreState === "SCORED",
-            )
-            .reduce((sum, cycle) => sum + cycle.kilojoule * 0.239006, 0);
+            ),
+            (cycle: WhoopCycle) => cycle.kilojoule * 0.239006,
+            (cycle: WhoopCycle) => cycle.end!,
+          );
 
-          const averageAllAround =
-            (sleepPerformance / challengeDurationDays +
-              recovery / challengeDurationDays +
-              strain / challengeDurationDays +
-              calories / challengeDurationDays) /
+          const averageAllAroundImprovement =
+            (sleepPerformanceImprovement +
+              recoveryImprovement +
+              strainImprovement +
+              caloriesImprovement) /
             4;
 
-          targetReached = averageAllAround >= Number(challengeTarget);
+          targetReached =
+            averageAllAroundImprovement >= Number(challengeTarget);
           break;
 
         case 5: // Sleep Sage
           const sleepPerformanceData = whoopData.whoopSleeps.filter(
-            (sleep) =>
-              isWithinChallengePeriod(new Date(sleep.end)) &&
+            (sleep: WhoopSleep) =>
+              isWithinChallengePeriod(sleep.end) &&
               sleep.scoreState === "SCORED" &&
               !sleep.nap,
           );
 
-          const avgSleepPerformance =
-            sleepPerformanceData.reduce(
-              (sum, sleep) => sum + sleep.sleepPerformancePercentage! ?? 0,
-              0,
-            ) / sleepPerformanceData.length;
+          const sleepPerformanceImprovementSage = calculateImprovementTrend(
+            sleepPerformanceData,
+            (sleep: WhoopSleep) => sleep.sleepPerformancePercentage ?? 0,
+            (sleep: WhoopSleep) => sleep.end,
+          );
 
-          const avgSleepConsistency =
-            sleepPerformanceData.reduce(
-              (sum, sleep) => sum + sleep.sleepConsistencyPercentage! ?? 0,
-              0,
-            ) / sleepPerformanceData.length;
+          const sleepConsistencyImprovement = calculateImprovementTrend(
+            sleepPerformanceData,
+            (sleep: WhoopSleep) => sleep.sleepConsistencyPercentage ?? 0,
+            (sleep: WhoopSleep) => sleep.end,
+          );
 
-          const avgSleepEfficiency =
-            sleepPerformanceData.reduce(
-              (sum, sleep) => sum + sleep.sleepEfficiencyPercentage! ?? 0,
-              0,
-            ) / sleepPerformanceData.length;
+          const sleepEfficiencyImprovement = calculateImprovementTrend(
+            sleepPerformanceData,
+            (sleep: WhoopSleep) => sleep.sleepEfficiencyPercentage ?? 0,
+            (sleep: WhoopSleep) => sleep.end,
+          );
 
           const averageSleepSage =
-            (avgSleepPerformance + avgSleepConsistency + avgSleepEfficiency) /
+            (sleepPerformanceImprovementSage +
+              sleepConsistencyImprovement +
+              sleepEfficiencyImprovement) /
             3;
 
           targetReached = averageSleepSage >= Number(challengeTarget);
@@ -369,23 +407,26 @@ export const userRouter = createTRPCRouter({
 
         case 6: // Workout Wizard
           const workoutData = whoopData.whoopCycles.filter(
-            (cycle) =>
-              (cycle.end === null ||
-                isWithinChallengePeriod(new Date(cycle.end))) &&
+            (cycle: WhoopCycle) =>
+              cycle.end !== null &&
+              isWithinChallengePeriod(cycle.end) &&
               cycle.scoreState === "SCORED",
           );
 
-          const avgStrain =
-            workoutData.reduce((sum, cycle) => sum + cycle.strain, 0) /
-            challengeDurationDays;
+          const strainImprovementWizard = calculateImprovementTrend(
+            workoutData,
+            (cycle: WhoopCycle) => cycle.strain,
+            (cycle: WhoopCycle) => cycle.end!,
+          );
 
-          const avgCalories =
-            workoutData.reduce(
-              (sum, cycle) => sum + cycle.kilojoule * 0.239006,
-              0,
-            ) / challengeDurationDays;
+          const caloriesImprovementWizard = calculateImprovementTrend(
+            workoutData,
+            (cycle: WhoopCycle) => cycle.kilojoule * 0.239006,
+            (cycle: WhoopCycle) => cycle.end!,
+          );
 
-          const averageWorkoutWizard = (avgStrain + avgCalories) / 2;
+          const averageWorkoutWizard =
+            (strainImprovementWizard + caloriesImprovementWizard) / 2;
 
           targetReached = averageWorkoutWizard >= Number(challengeTarget);
 
@@ -558,103 +599,112 @@ export const userRouter = createTRPCRouter({
             return totalRecovery / challengeDurationDays;
 
           case 4: // All-Around Avenger
-            const sleepPerformance = userData.whoopSleeps
-              .filter(
-                (sleep) =>
-                  isWithinChallengePeriod(new Date(sleep.end)) &&
+            const sleepPerformanceImprovement = calculateImprovementTrend(
+              userData.whoopSleeps.filter(
+                (sleep: WhoopSleep) =>
+                  isWithinChallengePeriod(sleep.end) &&
                   sleep.scoreState === "SCORED" &&
                   !sleep.nap,
-              )
-              .reduce(
-                (sum, sleep) => sum + sleep.sleepPerformancePercentage! ?? 0,
-                0,
-              );
+              ),
+              (sleep: WhoopSleep) => sleep.sleepPerformancePercentage ?? 0,
+              (sleep: WhoopSleep) => sleep.end,
+            );
 
-            const recovery = userData.whoopRecoveries
-              .filter(
-                (recovery) =>
-                  isWithinChallengePeriod(
-                    new Date(recovery.updatedAtByWhoop),
-                  ) &&
+            const recoveryImprovement = calculateImprovementTrend(
+              userData.whoopRecoveries.filter(
+                (recovery: WhoopRecovery) =>
+                  isWithinChallengePeriod(recovery.updatedAtByWhoop) &&
                   recovery.scoreState === "SCORED" &&
                   !recovery.userCalibrating,
-              )
-              .reduce((sum, recovery) => sum + recovery.recoveryScore, 0);
+              ),
+              (recovery: WhoopRecovery) => recovery.recoveryScore,
+              (recovery: WhoopRecovery) => recovery.updatedAtByWhoop,
+            );
 
-            const strain = userData.whoopCycles
-              .filter(
-                (cycle) =>
-                  isWithinChallengePeriod(new Date(cycle.end!)) &&
+            const strainImprovement = calculateImprovementTrend(
+              userData.whoopCycles.filter(
+                (cycle: WhoopCycle) =>
+                  cycle.end !== null &&
+                  isWithinChallengePeriod(cycle.end) &&
                   cycle.scoreState === "SCORED",
-              )
-              .reduce((sum, cycle) => sum + cycle.strain, 0);
+              ),
+              (cycle: WhoopCycle) => cycle.strain,
+              (cycle: WhoopCycle) => cycle.end!,
+            );
 
-            const calories = userData.whoopCycles
-              .filter(
-                (cycle) =>
-                  isWithinChallengePeriod(new Date(cycle.end!)) &&
+            const caloriesImprovement = calculateImprovementTrend(
+              userData.whoopCycles.filter(
+                (cycle: WhoopCycle) =>
+                  cycle.end !== null &&
+                  isWithinChallengePeriod(cycle.end) &&
                   cycle.scoreState === "SCORED",
-              )
-              .reduce((sum, cycle) => sum + cycle.kilojoule * 0.239006, 0);
+              ),
+              (cycle: WhoopCycle) => cycle.kilojoule * 0.239006,
+              (cycle: WhoopCycle) => cycle.end!,
+            );
 
             return (
-              (sleepPerformance / challengeDurationDays +
-                recovery / challengeDurationDays +
-                strain / challengeDurationDays +
-                calories / challengeDurationDays) /
+              (sleepPerformanceImprovement +
+                recoveryImprovement +
+                strainImprovement +
+                caloriesImprovement) /
               4
             );
 
           case 5: // Sleep Sage
             const sleepPerformanceData = userData.whoopSleeps.filter(
-              (sleep) =>
-                isWithinChallengePeriod(new Date(sleep.end)) &&
+              (sleep: WhoopSleep) =>
+                isWithinChallengePeriod(sleep.end) &&
                 sleep.scoreState === "SCORED" &&
                 !sleep.nap,
             );
 
-            const avgSleepPerformance =
-              sleepPerformanceData.reduce(
-                (sum, sleep) => sum + sleep.sleepPerformancePercentage! ?? 0,
-                0,
-              ) / sleepPerformanceData.length;
+            const sleepPerformanceImprovementSage = calculateImprovementTrend(
+              sleepPerformanceData,
+              (sleep: WhoopSleep) => sleep.sleepPerformancePercentage ?? 0,
+              (sleep: WhoopSleep) => sleep.end,
+            );
 
-            const avgSleepConsistency =
-              sleepPerformanceData.reduce(
-                (sum, sleep) => sum + sleep.sleepConsistencyPercentage! ?? 0,
-                0,
-              ) / sleepPerformanceData.length;
+            const sleepConsistencyImprovement = calculateImprovementTrend(
+              sleepPerformanceData,
+              (sleep: WhoopSleep) => sleep.sleepConsistencyPercentage ?? 0,
+              (sleep: WhoopSleep) => sleep.end,
+            );
 
-            const avgSleepEfficiency =
-              sleepPerformanceData.reduce(
-                (sum, sleep) => sum + sleep.sleepEfficiencyPercentage! ?? 0,
-                0,
-              ) / sleepPerformanceData.length;
+            const sleepEfficiencyImprovement = calculateImprovementTrend(
+              sleepPerformanceData,
+              (sleep: WhoopSleep) => sleep.sleepEfficiencyPercentage ?? 0,
+              (sleep: WhoopSleep) => sleep.end,
+            );
 
             return (
-              (avgSleepPerformance + avgSleepConsistency + avgSleepEfficiency) /
+              (sleepPerformanceImprovementSage +
+                sleepConsistencyImprovement +
+                sleepEfficiencyImprovement) /
               3
             );
 
           case 6: // Workout Wizard
             const workoutData = userData.whoopCycles.filter(
-              (cycle) =>
-                (cycle.end === null ||
-                  isWithinChallengePeriod(new Date(cycle.end))) &&
+              (cycle: WhoopCycle) =>
+                cycle.end !== null &&
+                isWithinChallengePeriod(cycle.end) &&
                 cycle.scoreState === "SCORED",
             );
 
-            const avgStrain =
-              workoutData.reduce((sum, cycle) => sum + cycle.strain, 0) /
-              challengeDurationDays;
+            const strainImprovementWizard = calculateImprovementTrend(
+              workoutData,
+              (cycle: WhoopCycle) => cycle.strain,
+              (cycle: WhoopCycle) => cycle.end!,
+            );
 
-            const avgCalories =
-              workoutData.reduce(
-                (sum, cycle) => sum + cycle.kilojoule * 0.239006,
-                0,
-              ) / challengeDurationDays;
+            const caloriesImprovementWizard = calculateImprovementTrend(
+              workoutData,
+              (cycle: WhoopCycle) => cycle.kilojoule * 0.239006,
+              (cycle: WhoopCycle) => cycle.end!,
+            );
 
-            return (avgStrain + avgCalories) / 2;
+            return (strainImprovementWizard + caloriesImprovementWizard) / 2;
 
           default:
             throw new TRPCError({

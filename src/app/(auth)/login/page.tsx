@@ -15,7 +15,7 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [buttonText, setButtonText] = useState("Login");
 
-  const { authenticated } = usePrivy();
+  const { authenticated, ready, user } = usePrivy();
 
   const router = useRouter();
 
@@ -25,7 +25,6 @@ const Login = () => {
       setButtonText("Logging in...");
       setSuccess("Login successful!");
       setButtonText("Redirecting...");
-      router.replace("/dashboard");
     },
     onError: (error) => {
       setError(error.toString());
@@ -43,13 +42,20 @@ const Login = () => {
   };
 
   useEffect(() => {
-    if (authenticated) {
-      setButtonText("Logged In");
-      setIsLoading(true);
-      router.replace("/dashboard");
+    if (ready && authenticated && user) {
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          router.push("/dashboard");
+
+          setTimeout(() => {
+            if (window.location.pathname !== "/dashboard") {
+              window.location.href = "/dashboard";
+            }
+          }, 2000);
+        }, 6000);
+      });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authenticated]);
+  }, [ready, authenticated, user, router]);
 
   return (
     <main className="flex h-screen w-screen items-center justify-center">
@@ -61,7 +67,6 @@ const Login = () => {
             width={500}
             height={500}
             className="h-full w-full rounded-full"
-            loading="lazy"
           />
         </CardHeader>
         <CardContent>

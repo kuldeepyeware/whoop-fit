@@ -28,7 +28,7 @@ const privyConfig: PrivyClientConfig = {
 
   loginMethods: [
     "email",
-    "google",
+    // "google",
     // "wallet"
   ],
   // fundingMethodConfig: {
