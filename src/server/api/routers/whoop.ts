@@ -199,34 +199,39 @@ export const whoopRouter = createTRPCRouter({
             nap: sleepRecord.nap,
             scoreState: sleepRecord.score_state,
             totalInBedTimeMilli:
-              sleepRecord.score.stage_summary.total_in_bed_time_milli,
+              sleepRecord.score?.stage_summary?.total_in_bed_time_milli || 0,
             totalAwakeTimeMilli:
-              sleepRecord.score.stage_summary.total_awake_time_milli,
+              sleepRecord.score?.stage_summary?.total_awake_time_milli || 0,
             totalNoDataTimeMilli:
-              sleepRecord.score.stage_summary.total_no_data_time_milli,
+              sleepRecord.score?.stage_summary?.total_no_data_time_milli || 0,
             totalLightSleepTimeMilli:
-              sleepRecord.score.stage_summary.total_light_sleep_time_milli,
+              sleepRecord.score?.stage_summary?.total_light_sleep_time_milli ||
+              0,
             totalSlowWaveSleepTimeMilli:
-              sleepRecord.score.stage_summary.total_slow_wave_sleep_time_milli,
+              sleepRecord.score?.stage_summary
+                ?.total_slow_wave_sleep_time_milli || 0,
             totalRemSleepTimeMilli:
-              sleepRecord.score.stage_summary.total_rem_sleep_time_milli,
-            sleepCycleCount: sleepRecord.score.stage_summary.sleep_cycle_count,
-            disturbanceCount: sleepRecord.score.stage_summary.disturbance_count,
+              sleepRecord.score?.stage_summary?.total_rem_sleep_time_milli || 0,
+            sleepCycleCount:
+              sleepRecord.score?.stage_summary?.sleep_cycle_count || 0,
+            disturbanceCount:
+              sleepRecord.score?.stage_summary?.disturbance_count || 0,
             baseline_milli_sleep_needed:
-              sleepRecord.score.sleep_needed.baseline_milli,
+              sleepRecord.score?.sleep_needed?.baseline_milli || 0,
             need_from_sleep_debt_milli:
-              sleepRecord.score.sleep_needed.need_from_sleep_debt_milli,
+              sleepRecord.score?.sleep_needed?.need_from_sleep_debt_milli || 0,
             need_from_recent_strain_milli:
-              sleepRecord.score.sleep_needed.need_from_recent_strain_milli,
+              sleepRecord.score?.sleep_needed?.need_from_recent_strain_milli ||
+              0,
             need_from_recent_nap_milli:
-              sleepRecord.score.sleep_needed.need_from_recent_nap_milli,
-            respiratoryRate: sleepRecord.score.respiratory_rate,
+              sleepRecord.score?.sleep_needed?.need_from_recent_nap_milli || 0,
+            respiratoryRate: sleepRecord.score?.respiratory_rate || 0,
             sleepPerformancePercentage:
-              sleepRecord.score.sleep_performance_percentage,
+              sleepRecord.score?.sleep_performance_percentage || 0,
             sleepConsistencyPercentage:
-              sleepRecord.score.sleep_consistency_percentage,
+              sleepRecord.score?.sleep_consistency_percentage || 0,
             sleepEfficiencyPercentage:
-              sleepRecord.score.sleep_efficiency_percentage,
+              sleepRecord.score?.sleep_efficiency_percentage || 0,
           })),
         }),
 

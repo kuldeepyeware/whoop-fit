@@ -174,29 +174,34 @@ async function handleSleepUpdate(
       nap: sleepData.nap,
       scoreState: sleepData.score_state,
       totalInBedTimeMilli:
-        sleepData.score.stage_summary.total_in_bed_time_milli,
-      totalAwakeTimeMilli: sleepData.score.stage_summary.total_awake_time_milli,
+        sleepData.score?.stage_summary?.total_in_bed_time_milli || 0,
+      totalAwakeTimeMilli:
+        sleepData.score?.stage_summary?.total_awake_time_milli || 0,
       totalNoDataTimeMilli:
-        sleepData.score.stage_summary.total_no_data_time_milli,
+        sleepData.score?.stage_summary?.total_no_data_time_milli || 0,
       totalLightSleepTimeMilli:
-        sleepData.score.stage_summary.total_light_sleep_time_milli,
+        sleepData.score?.stage_summary?.total_light_sleep_time_milli || 0,
       totalSlowWaveSleepTimeMilli:
-        sleepData.score.stage_summary.total_slow_wave_sleep_time_milli,
+        sleepData.score?.stage_summary?.total_slow_wave_sleep_time_milli || 0,
       totalRemSleepTimeMilli:
-        sleepData.score.stage_summary.total_rem_sleep_time_milli,
-      sleepCycleCount: sleepData.score.stage_summary.sleep_cycle_count,
-      disturbanceCount: sleepData.score.stage_summary.disturbance_count,
-      baseline_milli_sleep_needed: sleepData.score.sleep_needed.baseline_milli,
+        sleepData.score?.stage_summary?.total_rem_sleep_time_milli || 0,
+      sleepCycleCount: sleepData.score?.stage_summary?.sleep_cycle_count || 0,
+      disturbanceCount: sleepData.score?.stage_summary?.disturbance_count || 0,
+      baseline_milli_sleep_needed:
+        sleepData.score?.sleep_needed?.baseline_milli || 0,
       need_from_sleep_debt_milli:
-        sleepData.score.sleep_needed.need_from_sleep_debt_milli,
+        sleepData.score?.sleep_needed?.need_from_sleep_debt_milli || 0,
       need_from_recent_strain_milli:
-        sleepData.score.sleep_needed.need_from_recent_strain_milli,
+        sleepData.score?.sleep_needed?.need_from_recent_strain_milli || 0,
       need_from_recent_nap_milli:
-        sleepData.score.sleep_needed.need_from_recent_nap_milli,
-      respiratoryRate: sleepData.score.respiratory_rate,
-      sleepPerformancePercentage: sleepData.score.sleep_performance_percentage,
-      sleepConsistencyPercentage: sleepData.score.sleep_consistency_percentage,
-      sleepEfficiencyPercentage: sleepData.score.sleep_efficiency_percentage,
+        sleepData.score?.sleep_needed?.need_from_recent_nap_milli || 0,
+      respiratoryRate: sleepData.score?.respiratory_rate || 0,
+      sleepPerformancePercentage:
+        sleepData.score?.sleep_performance_percentage || 0,
+      sleepConsistencyPercentage:
+        sleepData.score?.sleep_consistency_percentage || 0,
+      sleepEfficiencyPercentage:
+        sleepData.score?.sleep_efficiency_percentage || 0,
     },
     create: {
       userId: String(userId),
@@ -209,29 +214,34 @@ async function handleSleepUpdate(
       nap: sleepData.nap,
       scoreState: sleepData.score_state,
       totalInBedTimeMilli:
-        sleepData.score.stage_summary.total_in_bed_time_milli,
-      totalAwakeTimeMilli: sleepData.score.stage_summary.total_awake_time_milli,
+        sleepData.score?.stage_summary?.total_in_bed_time_milli || 0,
+      totalAwakeTimeMilli:
+        sleepData.score?.stage_summary?.total_awake_time_milli || 0,
       totalNoDataTimeMilli:
-        sleepData.score.stage_summary.total_no_data_time_milli,
+        sleepData.score?.stage_summary?.total_no_data_time_milli || 0,
       totalLightSleepTimeMilli:
-        sleepData.score.stage_summary.total_light_sleep_time_milli,
+        sleepData.score?.stage_summary?.total_light_sleep_time_milli || 0,
       totalSlowWaveSleepTimeMilli:
-        sleepData.score.stage_summary.total_slow_wave_sleep_time_milli,
+        sleepData.score?.stage_summary?.total_slow_wave_sleep_time_milli || 0,
       totalRemSleepTimeMilli:
-        sleepData.score.stage_summary.total_rem_sleep_time_milli,
-      sleepCycleCount: sleepData.score.stage_summary.sleep_cycle_count,
-      disturbanceCount: sleepData.score.stage_summary.disturbance_count,
-      baseline_milli_sleep_needed: sleepData.score.sleep_needed.baseline_milli,
+        sleepData.score?.stage_summary?.total_rem_sleep_time_milli || 0,
+      sleepCycleCount: sleepData.score?.stage_summary?.sleep_cycle_count || 0,
+      disturbanceCount: sleepData.score?.stage_summary?.disturbance_count || 0,
+      baseline_milli_sleep_needed:
+        sleepData.score?.sleep_needed?.baseline_milli || 0,
       need_from_sleep_debt_milli:
-        sleepData.score.sleep_needed.need_from_sleep_debt_milli,
+        sleepData.score?.sleep_needed?.need_from_sleep_debt_milli || 0,
       need_from_recent_strain_milli:
-        sleepData.score.sleep_needed.need_from_recent_strain_milli,
+        sleepData.score?.sleep_needed?.need_from_recent_strain_milli || 0,
       need_from_recent_nap_milli:
-        sleepData.score.sleep_needed.need_from_recent_nap_milli,
-      respiratoryRate: sleepData.score.respiratory_rate,
-      sleepPerformancePercentage: sleepData.score.sleep_performance_percentage,
-      sleepConsistencyPercentage: sleepData.score.sleep_consistency_percentage,
-      sleepEfficiencyPercentage: sleepData.score.sleep_efficiency_percentage,
+        sleepData.score?.sleep_needed?.need_from_recent_nap_milli || 0,
+      respiratoryRate: sleepData.score?.respiratory_rate || 0,
+      sleepPerformancePercentage:
+        sleepData.score?.sleep_performance_percentage || 0,
+      sleepConsistencyPercentage:
+        sleepData.score?.sleep_consistency_percentage || 0,
+      sleepEfficiencyPercentage:
+        sleepData.score?.sleep_efficiency_percentage || 0,
     },
   });
 }
