@@ -314,13 +314,14 @@ export const whoopRouter = createTRPCRouter({
             userId: true,
           },
         },
-        whoopWorkouts: {
+        whoopCycles: {
           orderBy: {
             createdAt: "asc",
           },
           take: 1,
           select: {
             strain: true,
+            kilojoule: true,
           },
         },
         whoopRecoveries: {
@@ -330,6 +331,8 @@ export const whoopRouter = createTRPCRouter({
           take: 1,
           select: {
             recoveryScore: true,
+            hrvRmssd: true,
+            restingHeartRate: true,
           },
         },
         whoopSleeps: {
@@ -339,13 +342,6 @@ export const whoopRouter = createTRPCRouter({
           take: 1,
           select: {
             sleepEfficiencyPercentage: true,
-          },
-        },
-        whoopBodyMeasurements: {
-          select: {
-            height: true,
-            weight: true,
-            maxHeartRate: true,
           },
         },
       },
@@ -381,13 +377,14 @@ export const whoopRouter = createTRPCRouter({
               userId: true,
             },
           },
-          whoopWorkouts: {
+          whoopCycles: {
             orderBy: {
               createdAt: "asc",
             },
             take: 1,
             select: {
               strain: true,
+              kilojoule: true,
             },
           },
           whoopRecoveries: {
@@ -397,6 +394,8 @@ export const whoopRouter = createTRPCRouter({
             take: 1,
             select: {
               recoveryScore: true,
+              restingHeartRate: true,
+              hrvRmssd: true,
             },
           },
           whoopSleeps: {
@@ -406,13 +405,6 @@ export const whoopRouter = createTRPCRouter({
             take: 1,
             select: {
               sleepEfficiencyPercentage: true,
-            },
-          },
-          whoopBodyMeasurements: {
-            select: {
-              height: true,
-              weight: true,
-              maxHeartRate: true,
             },
           },
         },

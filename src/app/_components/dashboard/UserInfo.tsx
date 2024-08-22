@@ -79,10 +79,13 @@ const UserInfo = () => {
       >
         <section>
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold md:text-2xl">
+            <h2 className="text-xl font-bold text-white md:text-2xl">
               Your Whoop Profile
             </h2>
-            <Button onClick={() => handleCopyProfile(whoopData?.id ?? "")}>
+            <Button
+              className="bg-white text-black hover:bg-white/90"
+              onClick={() => handleCopyProfile(whoopData?.id ?? "")}
+            >
               {copiedProfile ? (
                 <>
                   <CopyCheckIcon className="mr-2 h-5 w-5" />
@@ -96,7 +99,7 @@ const UserInfo = () => {
               )}
             </Button>
           </div>
-          <div className="mt-6 grid gap-6 md:grid-cols-[200px_1fr]">
+          <div className="mt-6 grid gap-6 text-white md:grid-cols-[200px_1fr]">
             {authenticated && (
               <>
                 <div className="flex flex-col items-center gap-4">
@@ -108,12 +111,10 @@ const UserInfo = () => {
                       <span>{whoopData?.whoopProfile[0]?.firstName}</span>
                       <span> {whoopData?.whoopProfile[0]?.lastName}</span>
                     </div>
-                    <div className="text-muted-foreground">
-                      {whoopData?.whoopProfile[0]?.email}
-                    </div>
+                    <div>{whoopData?.whoopProfile[0]?.email}</div>
                     {whoopData?.smartAccountAddress && (
                       <div className="flex items-center justify-center gap-2">
-                        <div className="text-muted-foreground">
+                        <div>
                           {whoopData?.smartAccountAddress?.slice(0, 6)}...
                           {whoopData?.smartAccountAddress?.slice(-4)}
                         </div>
@@ -135,36 +136,26 @@ const UserInfo = () => {
                 </div>
                 <div className="grid gap-4">
                   <div className="grid gap-4 md:grid-cols-3">
-                    <Card className="p-4">
+                    <Card className="border-none bg-white/10 p-4 text-white shadow-lg backdrop-blur-md">
                       <div className="text-4xl font-bold">
-                        {Number(
-                          whoopData?.whoopBodyMeasurements[0]?.height ?? 0,
-                        ).toFixed(1)}
+                        {Number(whoopData?.whoopCycles[0]?.strain ?? 0).toFixed(
+                          1,
+                        )}
                       </div>
-                      <div className="text-sm text-muted-foreground">
-                        Height (m)
-                      </div>
-                    </Card>
-                    <Card className="p-4">
-                      <div className="text-4xl font-bold">
-                        {Number(
-                          whoopData?.whoopBodyMeasurements[0]?.weight ?? 0,
-                        ).toFixed(1)}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        Weight (kg)
-                      </div>
-                    </Card>
-                    <Card className="p-4">
-                      <div className="text-4xl font-bold">
-                        {whoopData?.whoopBodyMeasurements[0]?.maxHeartRate ?? 0}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        Max Heart Rate
-                      </div>
+                      <div className="text-sm"> Strain</div>
                     </Card>
 
-                    <Card className="p-4">
+                    <Card className="border-none bg-white/10 p-4 text-white shadow-lg backdrop-blur-md">
+                      <div className="text-4xl font-bold">
+                        {Number(
+                          whoopData?.whoopRecoveries[0]?.recoveryScore ?? 0,
+                        ).toFixed(2)}
+                        %
+                      </div>
+                      <div className="text-sm">Recovery Score</div>
+                    </Card>
+
+                    <Card className="border-none bg-white/10 p-4 text-white shadow-lg backdrop-blur-md">
                       <div className="text-4xl font-bold">
                         {Number(
                           whoopData?.whoopSleeps[0]
@@ -172,32 +163,30 @@ const UserInfo = () => {
                         ).toFixed(2)}
                         %
                       </div>
-                      <div className="text-sm text-muted-foreground">
-                        Latest Sleep Efficiency
-                      </div>
+                      <div className="text-sm"> Sleep Efficiency</div>
                     </Card>
-
-                    <Card className="p-4">
+                    <Card className="border-none bg-white/10 p-4 text-white shadow-lg backdrop-blur-md">
                       <div className="text-4xl font-bold">
                         {Number(
-                          whoopData?.whoopRecoveries[0]?.recoveryScore ?? 0,
-                        ).toFixed(2)}
-                        %
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        Latest Recovery Score
-                      </div>
-                    </Card>
-
-                    <Card className="p-4">
-                      <div className="text-4xl font-bold">
-                        {Number(
-                          whoopData?.whoopWorkouts[0]?.strain ?? 0,
+                          Number(whoopData?.whoopCycles[0]?.kilojoule ?? 0) *
+                            0.239006 ?? 0,
                         ).toFixed(1)}
                       </div>
-                      <div className="text-sm text-muted-foreground">
-                        Latest Strain
+                      <div className="text-sm">Calories</div>
+                    </Card>
+                    <Card className="border-none bg-white/10 p-4 text-white shadow-lg backdrop-blur-md">
+                      <div className="text-4xl font-bold">
+                        {Number(
+                          whoopData?.whoopRecoveries[0]?.hrvRmssd ?? 0,
+                        ).toFixed(1)}
                       </div>
+                      <div className="text-sm">Heart Rate Variability</div>
+                    </Card>
+                    <Card className="border-none bg-white/10 p-4 text-white shadow-lg backdrop-blur-md">
+                      <div className="text-4xl font-bold">
+                        {whoopData?.whoopRecoveries[0]?.restingHeartRate ?? 0}
+                      </div>
+                      <div className="text-sm">Resting Heart Rate</div>
                     </Card>
                   </div>
                 </div>
@@ -229,7 +218,11 @@ const ConnectWHOOP = () => {
   };
 
   return (
-    <Button onClick={handleConnect} disabled={isConnecting}>
+    <Button
+      className="rounded-md bg-white text-black hover:bg-white/70"
+      onClick={handleConnect}
+      disabled={isConnecting}
+    >
       {isConnecting ? "Connecting..." : "Connect WHOOP"}
     </Button>
   );

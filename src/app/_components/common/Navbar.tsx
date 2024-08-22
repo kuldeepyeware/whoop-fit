@@ -31,11 +31,11 @@ import { useToast } from "../ui/use-toast";
 const links = [
   {
     href: "/challenges",
-    name: "Challenges",
+    name: "Profile",
   },
   {
     href: "/users",
-    name: "Users",
+    name: "Challenge Others",
   },
 ];
 
@@ -135,10 +135,10 @@ const Navbar = () => {
   };
 
   return (
-    <header className="flex h-16 items-center justify-between border-b px-4 md:px-6">
+    <header className="flex h-16 items-center justify-between px-4 md:px-6">
       <Link
         href={"/dashboard"}
-        className="hidden text-2xl font-bold hover:text-primary/70 md:block"
+        className="hidden text-2xl font-bold text-white hover:text-white/70 md:block"
       >
         Fitcentive
       </Link>
@@ -147,7 +147,7 @@ const Navbar = () => {
           <Link
             key={index}
             href={link.href}
-            className="text-lg font-medium hover:text-primary/70"
+            className="text-lg font-medium text-white hover:text-white/70"
             prefetch={false}
           >
             {link.name}
@@ -156,13 +156,16 @@ const Navbar = () => {
       </nav>
       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
         <SheetTrigger className="block md:hidden">
-          <Menu />
+          <Menu className="cursor-pointer text-white hover:text-white/70" />
         </SheetTrigger>
-        <SheetContent side="left" className="w-[250px]">
+        <SheetContent
+          side="left"
+          className="w-[250px] border-none bg-[#001636] text-white"
+        >
           <SheetHeader className="space-y-8">
             <SheetTitle>
               <Link href="/dashboard" onClick={() => setIsSheetOpen(false)}>
-                <span className="text-2xl font-medium hover:text-primary/70">
+                <span className="text-2xl font-medium text-white hover:text-white/70">
                   Fitcentive
                 </span>
               </Link>
@@ -177,8 +180,8 @@ const Navbar = () => {
                     onClick={() => setIsSheetOpen(false)}
                     className={`flex items-center gap-2 rounded-md px-3 py-2 transition-colors ${
                       isActive
-                        ? "bg-primary text-primary-foreground"
-                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                        ? "bg-white text-black"
+                        : "text-white hover:bg-muted hover:text-foreground"
                     }`}
                   >
                     {link.name}
@@ -190,7 +193,7 @@ const Navbar = () => {
         </SheetContent>
       </Sheet>
       <Link
-        className="font-medium hover:text-primary/70 md:hidden"
+        className="font-medium text-white hover:text-white/70 md:hidden"
         href="/dashboard"
       >
         <span className="block text-2xl">Fitcentive</span>
@@ -198,10 +201,16 @@ const Navbar = () => {
       <div className="">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <UserCircle2 className="h-9 w-9 text-black" strokeWidth={1} />
+            <UserCircle2
+              className="h-9 w-9 cursor-pointer text-white hover:text-white/70"
+              strokeWidth={1}
+            />
           </DropdownMenuTrigger>
           {authenticated && ready && smartAccountReady && (
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent
+              align="end"
+              className="border-none bg-[#001636] text-white"
+            >
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
               {/* <DropdownMenuItem

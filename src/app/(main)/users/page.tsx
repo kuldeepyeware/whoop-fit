@@ -406,7 +406,7 @@ const Users = () => {
   return (
     <main className="min-w-sm flex-1 p-6 sm:max-w-full">
       <div className="w-full">
-        <Card className="w-full">
+        <Card className="w-full border-none bg-white/10 text-white shadow-lg backdrop-blur-md">
           <CardHeader>
             <CardTitle>All Users</CardTitle>
             <CardDescription>View users and their metrics</CardDescription>
@@ -420,83 +420,90 @@ const Users = () => {
                   <>
                     {users.length >= 1 ? (
                       <>
-                        <CardContent className="w-full">
-                          <Table className="w-full">
-                            <TableHeader>
-                              <TableRow>
-                                <TableHead className="w-1/5 md:w-1/5">
-                                  Name
-                                </TableHead>
-                                <TableHead className="w-1/5 md:w-1/5">
-                                  Sleep Efficiency
-                                </TableHead>
-                                <TableHead className="w-1/5 md:w-1/5">
-                                  Recovery
-                                </TableHead>
-                                <TableHead className="w-1/5 md:w-1/5">
-                                  Strain
-                                </TableHead>
-                                <TableHead className="w-1/5 md:w-1/5">
-                                  Actions
-                                </TableHead>
-                              </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                              {users.map((user) => (
-                                <TableRow key={user.privyId}>
-                                  <TableCell className="w-1/5 md:w-1/5">
-                                    {user.whoopProfile[0]?.firstName}
-                                  </TableCell>
-                                  <TableCell className="w-1/5 md:w-1/5">
-                                    {Number(
-                                      user.whoopSleeps[0]
-                                        ?.sleepEfficiencyPercentage ?? 0,
-                                    ).toFixed(1)}
-                                    %
-                                  </TableCell>
-                                  <TableCell className="w-1/5 md:w-1/5">
-                                    {Number(
-                                      user.whoopRecoveries[0]?.recoveryScore ??
-                                        0,
-                                    ).toFixed(1)}
-                                  </TableCell>
-                                  <TableCell className="w-1/5 md:w-1/5">
-                                    {Number(
-                                      user?.whoopWorkouts[0]?.strain ?? 0,
-                                    ).toFixed(1)}
-                                  </TableCell>
-                                  <TableCell className="flex w-1/5 gap-3 md:w-1/5">
-                                    <Button
-                                      variant="outline"
-                                      className="space-x-2 p-5"
-                                      disabled={isPending}
-                                      onClick={() => openDialog(user, true)}
-                                    >
-                                      <Swords className="h-5 w-5" />
-                                      <span className="text-black">
-                                        1v1 Challenge
-                                      </span>
-                                    </Button>
-                                    <Button
-                                      variant="outline"
-                                      className="space-x-2 p-5"
-                                      disabled={isPending}
-                                      onClick={() => openDialog(user, false)}
-                                    >
-                                      <CircleDollarSign className="h-5 w-5" />
-                                      <span className="text-black">
-                                        Sponsor
-                                      </span>
-                                    </Button>
-                                  </TableCell>
+                        <CardContent className="w-full p-2 sm:p-6">
+                          <div className="overflow-x-auto sm:overflow-x-visible">
+                            <Table className="w-full table-fixed sm:table-auto">
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead className="w-1/5 text-xs sm:w-1/5 sm:text-sm">
+                                    Name
+                                  </TableHead>
+                                  <TableHead className="w-1/5 text-xs sm:w-1/5 sm:text-sm">
+                                    Sleep
+                                  </TableHead>
+                                  <TableHead className="w-1/5 text-xs sm:w-1/5 sm:text-sm">
+                                    Recovery
+                                  </TableHead>
+                                  <TableHead className="w-1/5 text-xs sm:w-1/5 sm:text-sm">
+                                    Strain
+                                  </TableHead>
+                                  <TableHead className="w-1/5 text-xs sm:w-1/5 sm:text-sm">
+                                    Actions
+                                  </TableHead>
                                 </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
+                              </TableHeader>
+                              <TableBody>
+                                {users.map((user) => (
+                                  <TableRow key={user.privyId}>
+                                    <TableCell className="w-1/5 py-2 text-xs sm:w-1/5 sm:py-4 sm:text-sm">
+                                      {user.whoopProfile[0]?.firstName}
+                                    </TableCell>
+                                    <TableCell className="w-1/5 py-2 text-xs sm:w-1/5 sm:py-4 sm:text-sm">
+                                      {Number(
+                                        user.whoopSleeps[0]
+                                          ?.sleepEfficiencyPercentage ?? 0,
+                                      ).toFixed(1)}
+                                      %
+                                    </TableCell>
+                                    <TableCell className="w-1/5 py-2 text-xs sm:w-1/5 sm:py-4 sm:text-sm">
+                                      {Number(
+                                        user.whoopRecoveries[0]
+                                          ?.recoveryScore ?? 0,
+                                      ).toFixed(1)}
+                                      %
+                                    </TableCell>
+                                    <TableCell className="w-1/5 py-2 text-xs sm:w-1/5 sm:py-4 sm:text-sm">
+                                      {Number(
+                                        user?.whoopCycles[0]?.strain ?? 0,
+                                      ).toFixed(1)}
+                                    </TableCell>
+                                    <TableCell className="w-1/5 py-2 sm:w-1/5 sm:py-4">
+                                      <div className="flex flex-col items-center space-y-2 sm:flex-row sm:space-x-2 sm:space-y-0">
+                                        <Button
+                                          variant="outline"
+                                          className="w-[50px] px-1 py-0.5 text-[8px] sm:w-auto sm:px-2 sm:py-1 sm:text-xs md:w-full"
+                                          disabled={isPending}
+                                          onClick={() => openDialog(user, true)}
+                                        >
+                                          <Swords className="mr-1 hidden h-3 w-3 text-black md:block" />
+                                          <span className="text-black">
+                                            1v1
+                                          </span>
+                                        </Button>
+                                        <Button
+                                          variant="outline"
+                                          className="w-[50px] px-1 py-0.5 text-[8px] sm:w-auto sm:px-2 sm:py-1 sm:text-xs md:w-full"
+                                          disabled={isPending}
+                                          onClick={() =>
+                                            openDialog(user, false)
+                                          }
+                                        >
+                                          <CircleDollarSign className="mr-1 hidden h-3 w-3 text-black md:block" />
+                                          <span className="text-black">
+                                            Sponsor
+                                          </span>
+                                        </Button>
+                                      </div>
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </div>
                         </CardContent>
                         <CardFooter>
                           <Pagination>
-                            <PaginationContent>
+                            <PaginationContent className="text-white">
                               <PaginationItem>
                                 <PaginationPrevious
                                   onClick={() =>
@@ -513,6 +520,7 @@ const Users = () => {
                                       onClick={() =>
                                         handlePageChange(index + 1)
                                       }
+                                      className="text-black"
                                       isActive={currentPage === index + 1}
                                     >
                                       {index + 1}
@@ -534,7 +542,7 @@ const Users = () => {
                         </CardFooter>
                       </>
                     ) : (
-                      <div className="ml-7 flex min-h-[200px] items-center justify-center text-xl font-medium">
+                      <div className="ml-7 flex min-h-[200px] items-center justify-center text-xl font-medium text-white">
                         No users found
                       </div>
                     )}
@@ -553,30 +561,31 @@ const Users = () => {
       </div>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-h-[700px] overflow-auto">
+        <DialogContent className="max-h-[700px] overflow-auto border-none bg-[#001636] text-white">
           <DialogHeader>
             <DialogTitle className="flex justify-center text-2xl font-bold">
               Add {form.getValues("isTwoSided") ? "Challenge" : "Sponsor"}{" "}
               Details
             </DialogTitle>
           </DialogHeader>
-          <Card className="p-6">
+          <Card className="border-none bg-[#001636] p-6 text-white">
             <Form {...form}>
               <form
                 onSubmit={form.handleSubmit(onSubmit)}
-                className="space-y-4"
+                className="space-y-4 text-white"
               >
                 <FormField
                   control={form.control}
                   name="endTime"
                   render={({ field }) => (
-                    <FormItem>
+                    <FormItem className="text-white">
                       <FormLabel>End Time</FormLabel>
                       <FormControl>
                         <Input
                           type="date"
                           disabled={isPending}
                           {...field}
+                          className="border-none bg-white/10 text-white shadow-lg backdrop-blur-md"
                           min={getTomorrowDate()}
                         />
                       </FormControl>
@@ -586,33 +595,41 @@ const Users = () => {
                 />
 
                 <Tabs defaultValue="holistic" onValueChange={handleTabClick}>
-                  <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="holistic">
+                  <TabsList className="grid h-[60px] w-full grid-cols-2 bg-white/10">
+                    <TabsTrigger
+                      value="holistic"
+                      className="h-full text-wrap text-center font-bold text-white data-[state=active]:bg-black data-[state=active]:text-white"
+                    >
                       Holistic (Recommended)
                     </TabsTrigger>
-                    <TabsTrigger value="isolated">Isolated</TabsTrigger>
+                    <TabsTrigger
+                      value="isolated"
+                      className="h-full text-wrap font-bold text-white data-[state=active]:bg-black data-[state=active]:text-white"
+                    >
+                      Isolated
+                    </TabsTrigger>
                   </TabsList>
                   <TabsContent value="holistic">
                     <div className="grid grid-cols-2 gap-4">
                       {holisticTypes.map((type) => (
                         <Card
                           key={type.value}
-                          className={`min-h-[50px] cursor-pointer ${
+                          className={`min-h-[50px] cursor-pointer bg-white/10 text-white ${
                             selectedHolisticType === type.value
                               ? "border-2 border-blue-500"
-                              : ""
+                              : "border-none"
                           } ${type.disabled ? "opacity-50" : ""}`}
                           onClick={() =>
                             !type.disabled &&
                             handleHolisticTypeSelect(type.value)
                           }
                         >
-                          <CardHeader>
-                            <CardTitle className="text-md">
+                          <CardHeader className="px-1">
+                            <CardTitle className="md:text-md text-center text-sm text-white">
                               {type.title}
                             </CardTitle>
                           </CardHeader>
-                          <CardContent className="text-sm">
+                          <CardContent className="text-xs text-white md:text-sm">
                             <ul className="list-disc">
                               {type.items.map((item, index) => (
                                 <li key={index}>{item}</li>
@@ -642,7 +659,9 @@ const Users = () => {
                         name="improvementPercentage"
                         render={({ field }) => (
                           <FormItem className="mt-3">
-                            <FormLabel>Improvement Percentage</FormLabel>
+                            <FormLabel className="text-white">
+                              Improvement Percentage
+                            </FormLabel>
                             <Select
                               onValueChange={field.onChange}
                               value={field.value ?? undefined}
@@ -651,11 +670,11 @@ const Users = () => {
                               }
                             >
                               <FormControl>
-                                <SelectTrigger>
+                                <SelectTrigger className="border-none bg-white/10 text-white">
                                   <SelectValue placeholder="Select percentage" />
                                 </SelectTrigger>
                               </FormControl>
-                              <SelectContent>
+                              <SelectContent className="bg-[#001636] text-white">
                                 <SelectItem value="5">
                                   5% Improvement
                                 </SelectItem>
@@ -676,6 +695,7 @@ const Users = () => {
                       />
                     )}
                   </TabsContent>
+
                   <TabsContent value="isolated">
                     <FormField
                       control={form.control}
@@ -693,11 +713,11 @@ const Users = () => {
                             disabled={isPending}
                           >
                             <FormControl>
-                              <SelectTrigger>
+                              <SelectTrigger className="border-none bg-white/10 text-white">
                                 <SelectValue placeholder="Select metric" />
                               </SelectTrigger>
                             </FormControl>
-                            <SelectContent>
+                            <SelectContent className="bg-[#001636] text-white">
                               <SelectItem value="0">Calories</SelectItem>
                               <SelectItem value="1">Strain</SelectItem>
                               <SelectItem value="2">Hours of Sleep</SelectItem>
@@ -715,7 +735,7 @@ const Users = () => {
                       form.watch("challengeType") &&
                       averageMetric > 0 && (
                         <div className="mt-2">
-                          <Label>
+                          <Label className="text-xs text-white md:text-base">
                             Last 7 Days User Average{" "}
                             {getChallengeTypeString(
                               Number(form.watch("challengeType")),
@@ -736,16 +756,23 @@ const Users = () => {
                               onValueChange={field.onChange}
                               defaultValue={field.value}
                               disabled={isPending}
+                              className="text-white"
                             >
                               <FormItem>
                                 <FormLabel className="flex items-center gap-2">
-                                  <RadioGroupItem value="improvement" />
+                                  <RadioGroupItem
+                                    value="improvement"
+                                    className="border-white text-white"
+                                  />
                                   <span>Percentage</span>
                                 </FormLabel>
                               </FormItem>
                               <FormItem>
                                 <FormLabel className="flex items-center gap-2">
-                                  <RadioGroupItem value="direct" />
+                                  <RadioGroupItem
+                                    value="direct"
+                                    className="border-white text-white"
+                                  />
                                   <span>Quantity</span>
                                 </FormLabel>
                               </FormItem>
@@ -796,6 +823,7 @@ const Users = () => {
                                       ? 100
                                       : undefined
                                 }
+                                className="border-none bg-white/10 text-white shadow-lg backdrop-blur-md"
                               />
                             </FormControl>
                             <FormMessage />
@@ -823,10 +851,10 @@ const Users = () => {
                                   value={field.value ?? undefined}
                                   disabled={isPending}
                                 >
-                                  <SelectTrigger>
+                                  <SelectTrigger className="border-none bg-white/10 text-white">
                                     <SelectValue placeholder="Select percentage" />
                                   </SelectTrigger>
-                                  <SelectContent>
+                                  <SelectContent className="bg-[#001636] text-white">
                                     <SelectItem value="5">
                                       5% Increase
                                     </SelectItem>
@@ -875,6 +903,7 @@ const Users = () => {
                                     }
                                   }}
                                   disabled={isPending}
+                                  className="border-none bg-white/10 text-white shadow-lg backdrop-blur-md"
                                 />
                               </FormControl>
                               <FormMessage />
@@ -903,6 +932,7 @@ const Users = () => {
                               field.onChange(value);
                             }
                           }}
+                          className="border-none bg-white/10 p-6 text-white shadow-lg backdrop-blur-md"
                           value={field.value || ""}
                         />
                       </FormControl>
@@ -915,7 +945,7 @@ const Users = () => {
                   <Button
                     disabled={!authenticated || isPending}
                     type="submit"
-                    className="w-full"
+                    className="w-full bg-white text-black hover:bg-white/90"
                   >
                     {isPending ? "Creating Challenge..." : "Create Challenge"}
                   </Button>

@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader } from "@/app/_components/ui/card";
 import FormError from "@/app/_components/common/FormError";
 import FormSuccess from "@/app/_components/common/FormSuccess";
 import Image from "next/image";
+// import { Label } from "@/app/_components/ui/label";
 
 const Login = () => {
   const [error, setError] = useState<string | undefined>("");
@@ -52,14 +53,15 @@ const Login = () => {
               window.location.href = "/dashboard";
             }
           }, 2000);
-        }, 6000);
+        }, 2000);
       });
     }
   }, [ready, authenticated, user, router]);
 
   return (
-    <main className="flex h-screen w-screen items-center justify-center">
-      <Card className="m-4 flex flex-col items-center justify-center">
+    <main className="flex h-screen w-screen flex-col items-center justify-center">
+      <h1 className="text-3xl font-bold text-white">Welcome to Fitcentive</h1>
+      <Card className="m-4 flex flex-col items-center justify-center border-none bg-white/10 shadow-lg backdrop-blur-md">
         <CardHeader>
           <Image
             src={"https://i.ibb.co/d77PV1y/Logo.png"}
@@ -68,11 +70,12 @@ const Login = () => {
             height={500}
             className="h-full w-full rounded-full"
           />
+          {/* <Label className="text-xl text-white">Log in to get started </Label> */}
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
             <Button
-              className="w-[300px] text-base"
+              className="w-[300px] bg-white text-base text-black hover:bg-white/90"
               disabled={isLoading || authenticated}
               onClick={handleLogin}
             >

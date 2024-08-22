@@ -27,8 +27,10 @@ const ChallengeLink = ({
   return (
     <div
       onClick={handleCopy}
-      className={`mt-4 flex h-10 cursor-pointer items-center justify-center rounded-lg px-4 py-2 text-sm text-white transition-all duration-300 ${
-        copied ? "bg-green-500" : "bg-primary hover:bg-primary/90"
+      className={`mt-4 flex h-10 cursor-pointer items-center justify-center rounded-lg px-4 py-2 text-sm transition-all duration-300 ${
+        copied
+          ? "bg-green-500 text-white"
+          : "bg-white text-black hover:bg-white/90"
       }`}
     >
       {copied ? "Copied!" : "Copy Challenge Link"}

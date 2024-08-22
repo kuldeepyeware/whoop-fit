@@ -415,7 +415,7 @@ const ProfilePage = ({ params }: { params: { id: string } }) => {
     <div className="container mx-auto px-6 py-8">
       {profileData && (
         <>
-          <div className="mt-6 grid gap-6 md:grid-cols-[200px_1fr]">
+          <div className="mt-6 grid gap-6 text-white md:grid-cols-[200px_1fr]">
             <>
               <div className="flex flex-col items-center gap-4">
                 <div className="flex h-full flex-col items-center justify-center space-y-1 text-center">
@@ -426,12 +426,10 @@ const ProfilePage = ({ params }: { params: { id: string } }) => {
                     <span>{profileData?.whoopProfile[0]?.firstName}</span>
                     <span> {profileData?.whoopProfile[0]?.lastName}</span>
                   </div>
-                  <div className="text-muted-foreground">
-                    {profileData?.whoopProfile[0]?.email}
-                  </div>
+                  <div>{profileData?.whoopProfile[0]?.email}</div>
                   {profileData?.smartAccountAddress && (
                     <div className="flex items-center justify-center gap-2">
-                      <div className="text-muted-foreground">
+                      <div>
                         {profileData?.smartAccountAddress?.slice(0, 6)}...
                         {profileData?.smartAccountAddress?.slice(-4)}
                       </div>
@@ -441,36 +439,26 @@ const ProfilePage = ({ params }: { params: { id: string } }) => {
               </div>
               <div className="grid gap-4">
                 <div className="grid gap-4 md:grid-cols-3">
-                  <Card className="p-4">
+                  <Card className="border-none bg-white/10 p-4 text-white shadow-lg backdrop-blur-md">
                     <div className="text-4xl font-bold">
-                      {Number(
-                        profileData?.whoopBodyMeasurements[0]?.height ?? 0,
-                      ).toFixed(1)}
+                      {Number(profileData?.whoopCycles[0]?.strain ?? 0).toFixed(
+                        1,
+                      )}
                     </div>
-                    <div className="text-sm text-muted-foreground">
-                      Height (m)
-                    </div>
-                  </Card>
-                  <Card className="p-4">
-                    <div className="text-4xl font-bold">
-                      {Number(
-                        profileData?.whoopBodyMeasurements[0]?.weight ?? 0,
-                      ).toFixed(1)}
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      Weight (kg)
-                    </div>
-                  </Card>
-                  <Card className="p-4">
-                    <div className="text-4xl font-bold">
-                      {profileData?.whoopBodyMeasurements[0]?.maxHeartRate ?? 0}
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      Max Heart Rate
-                    </div>
+                    <div className="text-sm"> Strain</div>
                   </Card>
 
-                  <Card className="p-4">
+                  <Card className="border-none bg-white/10 p-4 text-white shadow-lg backdrop-blur-md">
+                    <div className="text-4xl font-bold">
+                      {Number(
+                        profileData?.whoopRecoveries[0]?.recoveryScore ?? 0,
+                      ).toFixed(2)}
+                      %
+                    </div>
+                    <div className="text-sm">Recovery Score</div>
+                  </Card>
+
+                  <Card className="border-none bg-white/10 p-4 text-white shadow-lg backdrop-blur-md">
                     <div className="text-4xl font-bold">
                       {Number(
                         profileData?.whoopSleeps[0]
@@ -478,32 +466,31 @@ const ProfilePage = ({ params }: { params: { id: string } }) => {
                       ).toFixed(2)}
                       %
                     </div>
-                    <div className="text-sm text-muted-foreground">
-                      Latest Sleep Efficiency
-                    </div>
+                    <div className="text-sm"> Sleep Efficiency</div>
                   </Card>
 
-                  <Card className="p-4">
+                  <Card className="border-none bg-white/10 p-4 text-white shadow-lg backdrop-blur-md">
                     <div className="text-4xl font-bold">
                       {Number(
-                        profileData?.whoopRecoveries[0]?.recoveryScore ?? 0,
-                      ).toFixed(2)}
-                      %
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      Latest Recovery Score
-                    </div>
-                  </Card>
-
-                  <Card className="p-4">
-                    <div className="text-4xl font-bold">
-                      {Number(
-                        profileData?.whoopWorkouts[0]?.strain ?? 0,
+                        Number(profileData?.whoopCycles[0]?.kilojoule ?? 0) *
+                          0.239006 ?? 0,
                       ).toFixed(1)}
                     </div>
-                    <div className="text-sm text-muted-foreground">
-                      Latest Strain
+                    <div className="text-sm">Calories</div>
+                  </Card>
+                  <Card className="border-none bg-white/10 p-4 text-white shadow-lg backdrop-blur-md">
+                    <div className="text-4xl font-bold">
+                      {Number(
+                        profileData?.whoopRecoveries[0]?.hrvRmssd ?? 0,
+                      ).toFixed(1)}
                     </div>
+                    <div className="text-sm">Heart Rate Variability</div>
+                  </Card>
+                  <Card className="border-none bg-white/10 p-4 text-white shadow-lg backdrop-blur-md">
+                    <div className="text-4xl font-bold">
+                      {profileData?.whoopRecoveries[0]?.restingHeartRate ?? 0}
+                    </div>
+                    <div className="text-sm">Resting Heart Rate</div>
                   </Card>
                 </div>
               </div>
@@ -556,30 +543,31 @@ const ProfilePage = ({ params }: { params: { id: string } }) => {
       )}
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-h-[700px] overflow-auto">
+        <DialogContent className="max-h-[700px] overflow-auto border-none bg-[#001636] text-white">
           <DialogHeader>
             <DialogTitle className="flex justify-center text-2xl font-bold">
               Add {form.getValues("isTwoSided") ? "Challenge" : "Sponsor"}{" "}
               Details
             </DialogTitle>
           </DialogHeader>
-          <Card className="p-6">
+          <Card className="border-none bg-[#001636] p-6 text-white">
             <Form {...form}>
               <form
                 onSubmit={form.handleSubmit(onSubmit)}
-                className="space-y-4"
+                className="space-y-4 text-white"
               >
                 <FormField
                   control={form.control}
                   name="endTime"
                   render={({ field }) => (
-                    <FormItem>
+                    <FormItem className="text-white">
                       <FormLabel>End Time</FormLabel>
                       <FormControl>
                         <Input
                           type="date"
                           disabled={isPending}
                           {...field}
+                          className="border-none bg-white/10 text-white shadow-lg backdrop-blur-md"
                           min={getTomorrowDate()}
                         />
                       </FormControl>
@@ -589,33 +577,41 @@ const ProfilePage = ({ params }: { params: { id: string } }) => {
                 />
 
                 <Tabs defaultValue="holistic" onValueChange={handleTabClick}>
-                  <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="holistic">
+                  <TabsList className="grid h-[60px] w-full grid-cols-2 bg-white/10">
+                    <TabsTrigger
+                      value="holistic"
+                      className="h-full text-wrap text-center font-bold text-white data-[state=active]:bg-black data-[state=active]:text-white"
+                    >
                       Holistic (Recommended)
                     </TabsTrigger>
-                    <TabsTrigger value="isolated">Isolated</TabsTrigger>
+                    <TabsTrigger
+                      value="isolated"
+                      className="h-full text-wrap font-bold text-white data-[state=active]:bg-black data-[state=active]:text-white"
+                    >
+                      Isolated
+                    </TabsTrigger>
                   </TabsList>
                   <TabsContent value="holistic">
                     <div className="grid grid-cols-2 gap-4">
                       {holisticTypes.map((type) => (
                         <Card
                           key={type.value}
-                          className={`min-h-[50px] cursor-pointer ${
+                          className={`min-h-[50px] cursor-pointer bg-white/10 text-white ${
                             selectedHolisticType === type.value
                               ? "border-2 border-blue-500"
-                              : ""
+                              : "border-none"
                           } ${type.disabled ? "opacity-50" : ""}`}
                           onClick={() =>
                             !type.disabled &&
                             handleHolisticTypeSelect(type.value)
                           }
                         >
-                          <CardHeader>
-                            <CardTitle className="text-md">
+                          <CardHeader className="px-1">
+                            <CardTitle className="md:text-md text-center text-sm text-white">
                               {type.title}
                             </CardTitle>
                           </CardHeader>
-                          <CardContent className="text-sm">
+                          <CardContent className="text-xs text-white md:text-sm">
                             <ul className="list-disc">
                               {type.items.map((item, index) => (
                                 <li key={index}>{item}</li>
@@ -645,7 +641,9 @@ const ProfilePage = ({ params }: { params: { id: string } }) => {
                         name="improvementPercentage"
                         render={({ field }) => (
                           <FormItem className="mt-3">
-                            <FormLabel>Improvement Percentage</FormLabel>
+                            <FormLabel className="text-white">
+                              Improvement Percentage
+                            </FormLabel>
                             <Select
                               onValueChange={field.onChange}
                               value={field.value ?? undefined}
@@ -654,11 +652,11 @@ const ProfilePage = ({ params }: { params: { id: string } }) => {
                               }
                             >
                               <FormControl>
-                                <SelectTrigger>
+                                <SelectTrigger className="border-none bg-white/10 text-white">
                                   <SelectValue placeholder="Select percentage" />
                                 </SelectTrigger>
                               </FormControl>
-                              <SelectContent>
+                              <SelectContent className="bg-[#001636] text-white">
                                 <SelectItem value="5">
                                   5% Improvement
                                 </SelectItem>
@@ -679,6 +677,7 @@ const ProfilePage = ({ params }: { params: { id: string } }) => {
                       />
                     )}
                   </TabsContent>
+
                   <TabsContent value="isolated">
                     <FormField
                       control={form.control}
@@ -696,11 +695,11 @@ const ProfilePage = ({ params }: { params: { id: string } }) => {
                             disabled={isPending}
                           >
                             <FormControl>
-                              <SelectTrigger>
+                              <SelectTrigger className="border-none bg-white/10 text-white">
                                 <SelectValue placeholder="Select metric" />
                               </SelectTrigger>
                             </FormControl>
-                            <SelectContent>
+                            <SelectContent className="bg-[#001636] text-white">
                               <SelectItem value="0">Calories</SelectItem>
                               <SelectItem value="1">Strain</SelectItem>
                               <SelectItem value="2">Hours of Sleep</SelectItem>
@@ -718,7 +717,7 @@ const ProfilePage = ({ params }: { params: { id: string } }) => {
                       form.watch("challengeType") &&
                       averageMetric > 0 && (
                         <div className="mt-2">
-                          <Label>
+                          <Label className="text-xs text-white md:text-base">
                             Last 7 Days User Average{" "}
                             {getChallengeTypeString(
                               Number(form.watch("challengeType")),
@@ -739,16 +738,23 @@ const ProfilePage = ({ params }: { params: { id: string } }) => {
                               onValueChange={field.onChange}
                               defaultValue={field.value}
                               disabled={isPending}
+                              className="text-white"
                             >
                               <FormItem>
                                 <FormLabel className="flex items-center gap-2">
-                                  <RadioGroupItem value="improvement" />
+                                  <RadioGroupItem
+                                    value="improvement"
+                                    className="border-white text-white"
+                                  />
                                   <span>Percentage</span>
                                 </FormLabel>
                               </FormItem>
                               <FormItem>
                                 <FormLabel className="flex items-center gap-2">
-                                  <RadioGroupItem value="direct" />
+                                  <RadioGroupItem
+                                    value="direct"
+                                    className="border-white text-white"
+                                  />
                                   <span>Quantity</span>
                                 </FormLabel>
                               </FormItem>
@@ -799,6 +805,7 @@ const ProfilePage = ({ params }: { params: { id: string } }) => {
                                       ? 100
                                       : undefined
                                 }
+                                className="border-none bg-white/10 text-white shadow-lg backdrop-blur-md"
                               />
                             </FormControl>
                             <FormMessage />
@@ -826,10 +833,10 @@ const ProfilePage = ({ params }: { params: { id: string } }) => {
                                   value={field.value ?? undefined}
                                   disabled={isPending}
                                 >
-                                  <SelectTrigger>
+                                  <SelectTrigger className="border-none bg-white/10 text-white">
                                     <SelectValue placeholder="Select percentage" />
                                   </SelectTrigger>
-                                  <SelectContent>
+                                  <SelectContent className="bg-[#001636] text-white">
                                     <SelectItem value="5">
                                       5% Increase
                                     </SelectItem>
@@ -878,6 +885,7 @@ const ProfilePage = ({ params }: { params: { id: string } }) => {
                                     }
                                   }}
                                   disabled={isPending}
+                                  className="border-none bg-white/10 text-white shadow-lg backdrop-blur-md"
                                 />
                               </FormControl>
                               <FormMessage />
@@ -907,6 +915,7 @@ const ProfilePage = ({ params }: { params: { id: string } }) => {
                             }
                           }}
                           value={field.value || ""}
+                          className="border-none bg-white/10 p-6 text-white shadow-lg backdrop-blur-md"
                         />
                       </FormControl>
                       <FormMessage />
@@ -918,7 +927,7 @@ const ProfilePage = ({ params }: { params: { id: string } }) => {
                   <Button
                     disabled={!authenticated || isPending}
                     type="submit"
-                    className="w-full"
+                    className="w-full bg-black"
                   >
                     {isPending ? "Creating Challenge..." : "Create Challenge"}
                   </Button>

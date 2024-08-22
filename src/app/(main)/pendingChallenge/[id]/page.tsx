@@ -79,9 +79,9 @@ const ChallengePage = ({ params }: { params: { id: string } }) => {
 
   if (!isReady || !ready) {
     return (
-      <div className="flex h-[calc(100vh-4rem)] items-center justify-center">
+      <div className="flex h-[calc(100vh-4rem)] items-center justify-center text-white">
         <div className="text-center">
-          <div className="mx-auto h-16 w-16 animate-spin rounded-full border-b-2 border-gray-900"></div>
+          <div className="mx-auto h-16 w-16 animate-spin rounded-full border-b-2 border-gray-100"></div>
           <p className="mt-4 text-xl font-semibold">Loading challenge...</p>
         </div>
       </div>
@@ -91,7 +91,7 @@ const ChallengePage = ({ params }: { params: { id: string } }) => {
   if (isInvalidChallenge) {
     return (
       <div className="flex h-[calc(100vh-4rem)] items-center justify-center px-4 py-12">
-        <Card className="w-full max-w-md">
+        <Card className="w-full max-w-md border-none bg-white/10 text-white shadow-lg backdrop-blur-md">
           <CardHeader>
             <CardTitle className="text-center text-xl">
               Invalid Challenge
@@ -311,19 +311,21 @@ const ChallengePage = ({ params }: { params: { id: string } }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 px-4 py-12 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-md overflow-hidden rounded-xl bg-white shadow-md md:max-w-2xl">
+    <div className="min-h-screen px-4 py-12 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-md overflow-hidden rounded-xl border-none bg-white/10 p-4 text-white shadow-lg backdrop-blur-md md:max-w-2xl">
         <div className="md:flex">
           <div className="w-full p-8">
-            <h1 className="mt-1 block text-xl font-medium leading-tight text-black">
+            <h1 className="mt-1 block text-2xl font-medium leading-tight">
               {challenge?.challengeType
                 ? getChallengeTypeString(challenge?.challengeType)
                 : ""}
             </h1>
-            <div className="mt-2 text-gray-500">
+            <div className="mt-2">
               <p className="flex items-center">
                 <span className="mr-2 font-semibold">Target:</span>
-                {challenge?.challengeTarget.toString()}
+                {[4, 5, 6].includes(challenge?.challengeType ?? -1)
+                  ? `${challenge?.challengeTarget?.toString() ?? ""}% Improvement`
+                  : (challenge?.challengeTarget?.toString() ?? "")}
               </p>
               <p className="mt-1 flex items-center">
                 <span className="mr-2 font-semibold">Amount:</span>
@@ -366,7 +368,7 @@ const ChallengePage = ({ params }: { params: { id: string } }) => {
                   }`}
                 >
                   <XIcon className="mr-2 h-4 w-4" />
-                  {isProcessing ? "Processing..." : "Accept"}
+                  {isProcessing ? "Processing..." : "Reject"}
                 </Button>
               </div>
             ) : (

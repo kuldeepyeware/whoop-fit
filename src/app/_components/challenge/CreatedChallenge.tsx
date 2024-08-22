@@ -42,7 +42,7 @@ const CreatedChallenge: React.FC<CreatedChallengeProps> = ({
   return (
     <section>
       <CardHeader>
-        <CardTitle>Created Challenges</CardTitle>
+        <CardTitle className="text-white">Created Challenges</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="flex flex-wrap justify-center gap-4 md:justify-start">
@@ -56,7 +56,7 @@ const CreatedChallenge: React.FC<CreatedChallengeProps> = ({
               />
             ))
           ) : (
-            <p>No Created challenges</p>
+            <p className="text-white">No Created challenges</p>
           )}
         </div>
       </CardContent>

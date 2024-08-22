@@ -109,8 +109,9 @@ interface BodyMeasurement {
   max_heart_rate: number;
 }
 
-interface ProfileDataWorkout {
+interface ProfileDataCycle {
   strain: string;
+  kilojoule: string;
 }
 
 interface ProfileDataSleep {
@@ -118,6 +119,8 @@ interface ProfileDataSleep {
 }
 interface ProfileDataRecovery {
   recoveryScore: string;
+  hrvRmssd: string;
+  restingHeartRate: string;
 }
 
 interface ProfileUserData {
@@ -129,14 +132,9 @@ interface ProfileUserData {
     lastName: string;
     userId?: string;
   }[];
-  whoopWorkouts: ProfileDataWorkout[];
+  whoopCycles: ProfileDataCycle[];
   whoopRecoveries: ProfileDataRecovery[];
   whoopSleeps: ProfileDataSleep[];
-  whoopBodyMeasurements: {
-    height: number;
-    weight: number;
-    maxHeartRate: number;
-  }[];
 }
 
 interface UserListData {
@@ -146,7 +144,7 @@ interface UserListData {
     firstName: string;
     userId: string;
   }[];
-  whoopWorkouts: ProfileDataWorkout[];
+  whoopCycles: ProfileDataCycle[];
   whoopRecoveries: ProfileDataRecovery[];
   whoopSleeps: ProfileDataSleep[];
 }

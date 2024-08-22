@@ -157,7 +157,7 @@ export const userRouter = createTRPCRouter({
                 userId: true,
               },
             },
-            whoopWorkouts: {
+            whoopCycles: {
               orderBy: {
                 createdAt: "asc",
               },

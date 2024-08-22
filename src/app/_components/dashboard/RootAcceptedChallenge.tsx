@@ -86,7 +86,7 @@ const RootAcceptedChallenge = () => {
   return (
     <section>
       <CardHeader>
-        <CardTitle>Accepted Challenges</CardTitle>
+        <CardTitle className="text-white">Active Challenges</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="flex flex-wrap justify-center gap-4 md:justify-start">
@@ -94,11 +94,11 @@ const RootAcceptedChallenge = () => {
             acceptedChallenges.map((challenge, index) => (
               <Card
                 key={index}
-                className="mb-4 w-[320px] rounded-lg border border-gray-200 bg-white p-6 shadow-md transition-shadow duration-300 hover:shadow-lg"
+                className="mb-4 w-[320px] rounded-lg border border-none border-gray-200 bg-white bg-white/10 p-6 text-white shadow-lg backdrop-blur-md transition-shadow duration-300 hover:shadow-lg"
               >
                 <div className="flex h-full flex-col justify-between">
                   <div className="mb-2 flex items-center justify-between">
-                    <h3 className="text-xl font-bold text-gray-800">
+                    <h3 className="text-xl font-bold">
                       {getChallengeTypeString(challenge.challengeType)}
                     </h3>
                     <Badge
@@ -109,23 +109,23 @@ const RootAcceptedChallenge = () => {
                     </Badge>
                   </div>
                   <div className="mb-4">
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm">
                       <span className="font-semibold">Target:</span>{" "}
                       {challenge.challengeTarget.toString()}
                     </p>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm">
                       <span className="font-semibold">Amount:</span>{" "}
                       {challenge.challengerAmount.toString()}
                     </p>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm">
                       <span className="font-semibold">Two Sided:</span>{" "}
                       {challenge.isTwoSided ? "Yes" : "No"}
                     </p>
-                    <p className="text-sm text-gray-600">
-                      <ClockIcon className="mr-1 inline-block h-4 w-4 text-gray-500" />
+                    <p className="flex items-center text-sm">
+                      <ClockIcon className="mr-1 inline-block h-4 w-4" />
                       {formatTimeRemaining(challenge.endTime)}
                     </p>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm">
                       <span className="font-semibold">Challenger:</span>{" "}
                       {challenge.challenger.slice(0, 6)}...
                       {challenge.challenger.slice(-4)}
@@ -157,7 +157,7 @@ const RootAcceptedChallenge = () => {
               </Card>
             ))
           ) : (
-            <p>No accepted challenges</p>
+            <p className="text-white">No active challenges</p>
           )}
         </div>
       </CardContent>

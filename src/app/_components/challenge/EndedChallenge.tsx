@@ -42,7 +42,7 @@ const EndedChallenge: React.FC<EndedChallengeProps> = ({
   return (
     <section>
       <CardHeader>
-        <CardTitle>Ended Challenges</CardTitle>
+        <CardTitle className="text-white">Ended Challenges</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="flex flex-wrap justify-center gap-4 md:justify-start">
@@ -56,7 +56,7 @@ const EndedChallenge: React.FC<EndedChallengeProps> = ({
               />
             ))
           ) : (
-            <p>No ended challenges</p>
+            <p className="text-white">No ended challenges</p>
           )}
         </div>
       </CardContent>
