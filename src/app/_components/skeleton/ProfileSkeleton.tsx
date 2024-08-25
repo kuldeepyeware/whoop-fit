@@ -27,7 +27,7 @@ const ProfileSkeleton = () => {
               </div>
             </div>
             <div className="grid gap-4">
-              <div className="grid gap-4 md:grid-cols-3">
+              <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
                 <Card className="space-y-2 border-none bg-gray-700 p-4">
                   <Skeleton className="h-[48px] w-[60px] bg-gray-800" />
                   <div className="text-sm text-muted-foreground">
@@ -40,6 +40,20 @@ const ProfileSkeleton = () => {
                     <Skeleton className="h-[20px] w-[100px] bg-gray-800" />
                   </div>
                 </Card>
+                <Card className="space-y-2 border-none bg-gray-700 p-4">
+                  <Skeleton className="h-[48px] w-[60px] bg-gray-800" />
+                  <div className="text-sm text-muted-foreground">
+                    <Skeleton className="h-[20px] w-[100px] bg-gray-800" />
+                  </div>
+                </Card>
+
+                <Card className="space-y-2 border-none bg-gray-700 p-4">
+                  <Skeleton className="h-[48px] w-[60px] bg-gray-800" />
+                  <div className="text-sm text-muted-foreground">
+                    <Skeleton className="h-[20px] w-[100px] bg-gray-800" />
+                  </div>
+                </Card>
+
                 <Card className="space-y-2 border-none bg-gray-700 p-4">
                   <Skeleton className="h-[48px] w-[60px] bg-gray-800" />
                   <div className="text-sm text-muted-foreground">

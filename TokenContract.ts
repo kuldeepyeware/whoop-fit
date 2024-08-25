@@ -351,4 +351,4 @@ export const tokenAbi = [
   },
 ];
 
-export const tokenAddress = "0x0B670E112CB28344a2A1814E16C7a00a1A15Fe9a";
+export const tokenAddress = "0xb88513bBDb09cE5aBDe01C94738EAC62719482D0";

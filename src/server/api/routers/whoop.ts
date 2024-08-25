@@ -306,6 +306,7 @@ export const whoopRouter = createTRPCRouter({
       select: {
         smartAccountAddress: true,
         id: true,
+        challengeCompleted: true,
         whoopProfile: {
           select: {
             firstName: true,
@@ -369,6 +370,7 @@ export const whoopRouter = createTRPCRouter({
         where: { id },
         select: {
           smartAccountAddress: true,
+          challengeCompleted: true,
           whoopProfile: {
             select: {
               firstName: true,

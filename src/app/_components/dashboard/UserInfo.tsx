@@ -15,6 +15,10 @@ import ProfileSkeleton from "../skeleton/ProfileSkeleton";
 import { useAuth } from "@/hooks/authHook";
 import type { ProfileUserData } from "@/schemas/types/whoopDataTypes";
 import { env } from "@/env";
+import { useSmartAccount } from "@/hooks/smartAccountContext";
+import { useReadContract } from "wagmi";
+import { WhoopTokenAbi, WhoopTokenAddress } from "WhoopContract";
+import Link from "next/link";
 
 const UserInfo = () => {
   const [isConnected, setIsConnected] = useState(false);
@@ -22,7 +26,16 @@ const UserInfo = () => {
   const [copied, setCopied] = useState(false);
   const [copiedProfile, setCopiedProfile] = useState(false);
 
-  const { authenticated, walletReady } = useAuth();
+  const { authenticated } = useAuth();
+
+  const { smartAccountAddress, smartAccountReady } = useSmartAccount();
+
+  const { data: moneyEarnedData } = useReadContract({
+    address: WhoopTokenAddress,
+    abi: WhoopTokenAbi,
+    functionName: "getUserWinnings",
+    args: [smartAccountAddress],
+  });
 
   const { data: connectionStatus, isLoading: isCheckingConnection } =
     api.whoop.checkWhoopConnection.useQuery(undefined, {
@@ -68,7 +81,7 @@ const UserInfo = () => {
     }
   }, [userData]);
 
-  if (isCheckingConnection || !walletReady) {
+  if (isCheckingConnection || !smartAccountReady) {
     return <ProfileSkeleton />;
   }
 
@@ -79,7 +92,7 @@ const UserInfo = () => {
       >
         <section>
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-white md:text-2xl">
+            <h2 className="text-lg font-bold text-white md:text-2xl">
               Your Whoop Profile
             </h2>
             <Button
@@ -88,13 +101,13 @@ const UserInfo = () => {
             >
               {copiedProfile ? (
                 <>
-                  <CopyCheckIcon className="mr-2 h-5 w-5" />
-                  Copied
+                  <CopyCheckIcon className="mr-2 h-4 w-4 md:h-5 md:w-5" />
+                  <span>Copied</span>
                 </>
               ) : (
                 <>
-                  <ShareIcon className="mr-2 h-5 w-5" />
-                  Copy Profile Link{" "}
+                  <ShareIcon className="mr-2 h-4 w-4 md:h-5 md:w-5" />
+                  <span>Copy Profile Link</span>
                 </>
               )}
             </Button>
@@ -135,9 +148,9 @@ const UserInfo = () => {
                   </div>
                 </div>
                 <div className="grid gap-4">
-                  <div className="grid gap-4 md:grid-cols-3">
+                  <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
                     <Card className="border-none bg-white/10 p-4 text-white shadow-lg backdrop-blur-md">
-                      <div className="text-4xl font-bold">
+                      <div className="text-3xl font-bold md:text-4xl">
                         {Number(whoopData?.whoopCycles[0]?.strain ?? 0).toFixed(
                           1,
                         )}
@@ -146,7 +159,7 @@ const UserInfo = () => {
                     </Card>
 
                     <Card className="border-none bg-white/10 p-4 text-white shadow-lg backdrop-blur-md">
-                      <div className="text-4xl font-bold">
+                      <div className="text-3xl font-bold md:text-4xl">
                         {Number(
                           whoopData?.whoopRecoveries[0]?.recoveryScore ?? 0,
                         ).toFixed(2)}
@@ -156,7 +169,7 @@ const UserInfo = () => {
                     </Card>
 
                     <Card className="border-none bg-white/10 p-4 text-white shadow-lg backdrop-blur-md">
-                      <div className="text-4xl font-bold">
+                      <div className="text-3xl font-bold md:text-4xl">
                         {Number(
                           whoopData?.whoopSleeps[0]
                             ?.sleepEfficiencyPercentage ?? 0,
@@ -166,7 +179,7 @@ const UserInfo = () => {
                       <div className="text-sm"> Sleep Efficiency</div>
                     </Card>
                     <Card className="border-none bg-white/10 p-4 text-white shadow-lg backdrop-blur-md">
-                      <div className="text-4xl font-bold">
+                      <div className="text-3xl font-bold md:text-4xl">
                         {Number(
                           Number(whoopData?.whoopCycles[0]?.kilojoule ?? 0) *
                             0.239006 ?? 0,
@@ -175,7 +188,7 @@ const UserInfo = () => {
                       <div className="text-sm">Calories</div>
                     </Card>
                     <Card className="border-none bg-white/10 p-4 text-white shadow-lg backdrop-blur-md">
-                      <div className="text-4xl font-bold">
+                      <div className="text-3xl font-bold md:text-4xl">
                         {Number(
                           whoopData?.whoopRecoveries[0]?.hrvRmssd ?? 0,
                         ).toFixed(1)}
@@ -183,10 +196,22 @@ const UserInfo = () => {
                       <div className="text-sm">Heart Rate Variability</div>
                     </Card>
                     <Card className="border-none bg-white/10 p-4 text-white shadow-lg backdrop-blur-md">
-                      <div className="text-4xl font-bold">
+                      <div className="text-3xl font-bold md:text-4xl">
                         {whoopData?.whoopRecoveries[0]?.restingHeartRate ?? 0}
                       </div>
                       <div className="text-sm">Resting Heart Rate</div>
+                    </Card>
+                    <Card className="border-none bg-white/10 p-4 text-white shadow-lg backdrop-blur-md">
+                      <div className="text-3xl font-bold md:text-4xl">
+                        {whoopData?.challengeCompleted ?? 0}
+                      </div>
+                      <div className="text-sm">Challenges Completed</div>
+                    </Card>
+                    <Card className="border-none bg-white/10 p-4 text-white shadow-lg backdrop-blur-md">
+                      <div className="text-3xl font-bold md:text-4xl">
+                        {Number(moneyEarnedData ?? 0)} USDC
+                      </div>
+                      <div className="text-sm">Money Earned</div>
                     </Card>
                   </div>
                 </div>
@@ -198,6 +223,15 @@ const UserInfo = () => {
       {!isConnected && authenticated && (
         <div className="absolute inset-0 flex items-center justify-center">
           <ConnectWHOOP />
+        </div>
+      )}
+      {isConnected && authenticated && (
+        <div className="mb-5 mt-7 flex justify-center">
+          <Link href="/users">
+            <Button className="rounded-md bg-white text-black hover:bg-white/70">
+              Start Challenges
+            </Button>
+          </Link>
         </div>
       )}
     </div>

@@ -321,12 +321,18 @@ const ChallengePage = ({ params }: { params: { id: string } }) => {
                 : ""}
             </h1>
             <div className="mt-2">
-              <p className="flex items-center">
-                <span className="mr-2 font-semibold">Target:</span>
-                {[4, 5, 6].includes(challenge?.challengeType ?? -1)
-                  ? `${challenge?.challengeTarget?.toString() ?? ""}% Improvement`
-                  : (challenge?.challengeTarget?.toString() ?? "")}
-              </p>
+              {challenge?.challengeType && (
+                <>
+                  {!challenge?.isTwoSided && (
+                    <p className="mt-1 flex items-center">
+                      <span className="mr-2 font-semibold">Target:</span>{" "}
+                      {[4, 5, 6].includes(challenge?.challengeType)
+                        ? `${challenge?.challengeTarget.toString()}% Improvement`
+                        : challenge?.challengeTarget.toString()}
+                    </p>
+                  )}
+                </>
+              )}
               <p className="mt-1 flex items-center">
                 <span className="mr-2 font-semibold">Amount:</span>
                 {challenge?.challengerAmount.toString()} USDC

@@ -135,6 +135,7 @@ interface ProfileUserData {
   whoopCycles: ProfileDataCycle[];
   whoopRecoveries: ProfileDataRecovery[];
   whoopSleeps: ProfileDataSleep[];
+  challengeCompleted: number;
 }
 
 interface UserListData {

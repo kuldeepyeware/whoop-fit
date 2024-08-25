@@ -1038,6 +1038,25 @@ export const WhoopTokenAbi = [
   {
     inputs: [
       {
+        internalType: "address",
+        name: "_user",
+        type: "address",
+      },
+    ],
+    name: "getUserWinnings",
+    outputs: [
+      {
+        internalType: "uint256",
+        name: "",
+        type: "uint256",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
         internalType: "uint256",
         name: "_challengeId",
         type: "uint256",
@@ -1166,6 +1185,25 @@ export const WhoopTokenAbi = [
     stateMutability: "view",
     type: "function",
   },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "",
+        type: "address",
+      },
+    ],
+    name: "userWinnings",
+    outputs: [
+      {
+        internalType: "uint256",
+        name: "",
+        type: "uint256",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
 ];
 
-export const WhoopTokenAddress = "0xB8cee679Ba07b56d76c2707C28d0E6c3E8AB2bC5";
+export const WhoopTokenAddress = "0x19a3852081f7C05Da7c1b9c0F531583aB9772B01";

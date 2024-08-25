@@ -274,12 +274,14 @@ const PendingChallenge: React.FC<PendingChallengeProps> = ({
                     </Badge>
                   </div>
                   <div className="mb-4">
-                    <p className="text-sm">
-                      <span className="font-semibold">Target:</span>{" "}
-                      {[4, 5, 6].includes(challenge.challengeType)
-                        ? `${challenge.challengeTarget.toString()}% Improvement`
-                        : challenge.challengeTarget.toString()}
-                    </p>
+                    {!challenge.isTwoSided && (
+                      <p className="text-sm">
+                        <span className="font-semibold">Target:</span>{" "}
+                        {[4, 5, 6].includes(challenge.challengeType)
+                          ? `${challenge.challengeTarget.toString()}% Improvement`
+                          : challenge.challengeTarget.toString()}
+                      </p>
+                    )}
                     <p className="text-sm">
                       <span className="font-semibold">Amount:</span>{" "}
                       {challenge.challengerAmount.toString()} USDC

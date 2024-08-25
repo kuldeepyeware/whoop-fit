@@ -76,7 +76,7 @@ const Login = () => {
           <div className="space-y-2">
             <Button
               className="w-[300px] bg-white text-base text-black hover:bg-white/90"
-              disabled={isLoading || authenticated}
+              disabled={isLoading || authenticated || !ready}
               onClick={handleLogin}
             >
               {buttonText}

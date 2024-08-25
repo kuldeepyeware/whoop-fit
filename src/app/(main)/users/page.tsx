@@ -59,6 +59,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/app/_components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/app/_components/ui/tooltip";
 import { tokenAbi, tokenAddress } from "TokenContract";
 import { WhoopTokenAbi, WhoopTokenAddress } from "WhoopContract";
 import { useToast } from "@/app/_components/ui/use-toast";
@@ -80,10 +86,15 @@ import { env } from "@/env";
 
 const formSchema = z
   .object({
+    activeTab: z.enum(["holistic", "isolated"]),
     endTime: z.string().min(1, "End time is required"),
     challengeType: z.string().optional(),
-    holisticType: z.enum(["all-around", "sleep", "workout"]).optional(),
-    targetType: z.enum(["direct", "improvement"]),
+    holisticType: z
+      .enum(["all-around", "sleep", "workout"], {
+        required_error: "Holistic type is required",
+      })
+      .optional(),
+    targetType: z.enum(["direct", "improvement"]).optional(),
     challengeTarget: z.string().optional(),
     improvementPercentage: z.string().nullable(),
     customImprovement: z.string().optional(),
@@ -92,34 +103,85 @@ const formSchema = z
   })
   .refine(
     (data) => {
-      if (data.targetType === "direct") {
-        return !!data.challengeTarget && !isNaN(Number(data.challengeTarget));
-      } else if (data.targetType === "improvement") {
-        if (data.improvementPercentage === "custom") {
-          return (
-            !!data.customImprovement && !isNaN(Number(data.customImprovement))
-          );
-        } else {
-          return !!data.improvementPercentage;
+      if (data.activeTab === "holistic") {
+        if (!data.holisticType) {
+          return false;
+        }
+        if (!data.isTwoSided && !data.improvementPercentage) {
+          return false;
+        }
+      } else {
+        if (!data.challengeType) {
+          return false;
+        }
+        if (!data.isTwoSided) {
+          if (data.targetType === "direct") {
+            return (
+              !!data.challengeTarget && !isNaN(Number(data.challengeTarget))
+            );
+          } else {
+            if (data.improvementPercentage === "custom") {
+              return (
+                !!data.customImprovement &&
+                !isNaN(Number(data.customImprovement))
+              );
+            } else {
+              return !!data.improvementPercentage;
+            }
+          }
         }
       }
-      return false;
+      return true;
     },
-    {
-      message: "Please provide a valid target or improvement percentage",
-      path: ["challengeTarget"],
-    },
-  )
-  .refine(
     (data) => {
-      if (data.holisticType) {
-        return true;
+      if (data.activeTab === "holistic") {
+        if (!data.holisticType) {
+          return {
+            path: ["holisticType"],
+            message: "Holistic type is required",
+          };
+        }
+        if (!data.isTwoSided && !data.improvementPercentage) {
+          return {
+            path: ["improvementPercentage"],
+            message: "Improvement percentage is required",
+          };
+        }
+      } else {
+        if (!data.challengeType) {
+          return {
+            path: ["challengeType"],
+            message: "Challenge type is required",
+          };
+        }
+        if (!data.isTwoSided) {
+          if (data.targetType === "direct") {
+            if (!data.challengeTarget || isNaN(Number(data.challengeTarget))) {
+              return {
+                path: ["challengeTarget"],
+                message: "Challenge target is required",
+              };
+            }
+          } else {
+            if (!data.improvementPercentage) {
+              return {
+                path: ["improvementPercentage"],
+                message: "Improvement percentage is required",
+              };
+            }
+            if (
+              data.improvementPercentage === "custom" &&
+              (!data.customImprovement || isNaN(Number(data.customImprovement)))
+            ) {
+              return {
+                path: ["customImprovement"],
+                message: "Custom improvement percentage is required",
+              };
+            }
+          }
+        }
       }
-      return !!data.challengeType;
-    },
-    {
-      message: "Challenge type is required for isolated challenges",
-      path: ["challengeType"],
+      return { path: [""], message: "" };
     },
   );
 
@@ -134,9 +196,6 @@ const Users = () => {
   const [isPending, setIsPending] = useState(false);
   const [averageMetric, setAverageMetric] = useState(0);
   const [challengeLink, setChallengeLink] = useState<string | null>(null);
-  const [selectedHolisticType, setSelectedHolisticType] = useState<
-    string | null
-  >(null);
 
   const { toast } = useToast();
 
@@ -148,6 +207,7 @@ const Users = () => {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      activeTab: "holistic",
       endTime: "",
       challengeType: "",
       holisticType: undefined,
@@ -201,6 +261,10 @@ const Users = () => {
     });
 
   const calculateChallengeTarget = (values: FormValues): number => {
+    if (values.isTwoSided) {
+      return 0;
+    }
+
     if (values.holisticType) {
       return Number(values.improvementPercentage);
     }
@@ -229,9 +293,9 @@ const Users = () => {
     }
   };
 
-  const handleHolisticTypeSelect = (value: string) => {
-    setSelectedHolisticType(value as "all-around" | "sleep" | "workout");
-    form.setValue("holisticType", value as "all-around" | "sleep" | "workout");
+  const handleHolisticTypeSelect = (
+    value: "all-around" | "sleep" | "workout",
+  ) => {
     switch (value) {
       case "all-around":
         form.setValue("challengeType", "4");
@@ -245,9 +309,10 @@ const Users = () => {
     }
   };
 
-  const handleTabClick = () => {
+  const handleTabClick = (tab: "holistic" | "isolated") => {
     const currentIsTwoSided = form.getValues("isTwoSided");
     form.reset({
+      activeTab: tab,
       endTime: "",
       challengeType: "",
       holisticType: undefined,
@@ -258,7 +323,6 @@ const Users = () => {
       amount: "",
       isTwoSided: currentIsTwoSided,
     });
-    setSelectedHolisticType(null);
   };
 
   function getChallengeTypeFromHolistic(holisticType: string): number {
@@ -336,29 +400,23 @@ const Users = () => {
         to: tokenAddress,
         data: approveTokencallData,
       });
-
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       await sendUserOperation({
         to: WhoopTokenAddress,
         data: createChallengecallData,
       });
-
       await refetchChallengeCounter();
-
       if (challengeCounterData) {
         const latestChallengeId = Number(challengeCounterData);
         const newChallengeLink = `${env.NEXT_PUBLIC_DOMAIN_URL}pendingChallenge/${latestChallengeId}`;
         setChallengeLink(newChallengeLink);
       }
-
       toast({
         title: "Created Challenge successfully!",
         description: "Click the 'Copy Challenge Link' button to share.",
       });
-
       setIsPending(false);
-
       form.reset();
     } catch (error) {
       console.error("Error sending transaction:", error);
@@ -402,6 +460,16 @@ const Users = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.watch("challengeType")]);
+
+  useEffect(() => {
+    if (form.watch("isTwoSided")) {
+      form.setValue("targetType", undefined);
+      form.setValue("challengeTarget", "");
+      form.setValue("improvementPercentage", "");
+      form.setValue("customImprovement", "");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.watch("isTwoSided")]);
 
   return (
     <main className="min-w-sm flex-1 p-6 sm:max-w-full">
@@ -469,30 +537,64 @@ const Users = () => {
                                     </TableCell>
                                     <TableCell className="w-1/5 py-2 sm:w-1/5 sm:py-4">
                                       <div className="flex flex-col items-center space-y-2 sm:flex-row sm:space-x-2 sm:space-y-0">
-                                        <Button
-                                          variant="outline"
-                                          className="w-[50px] px-1 py-0.5 text-[8px] sm:w-auto sm:px-2 sm:py-1 sm:text-xs md:w-full"
-                                          disabled={isPending}
-                                          onClick={() => openDialog(user, true)}
-                                        >
-                                          <Swords className="mr-1 hidden h-3 w-3 text-black md:block" />
-                                          <span className="text-black">
-                                            1v1
-                                          </span>
-                                        </Button>
-                                        <Button
-                                          variant="outline"
-                                          className="w-[50px] px-1 py-0.5 text-[8px] sm:w-auto sm:px-2 sm:py-1 sm:text-xs md:w-full"
-                                          disabled={isPending}
-                                          onClick={() =>
-                                            openDialog(user, false)
-                                          }
-                                        >
-                                          <CircleDollarSign className="mr-1 hidden h-3 w-3 text-black md:block" />
-                                          <span className="text-black">
-                                            Sponsor
-                                          </span>
-                                        </Button>
+                                        <TooltipProvider>
+                                          <Tooltip>
+                                            <TooltipTrigger>
+                                              <Button
+                                                variant="outline"
+                                                className="w-[50px] px-1 py-0.5 text-[8px] sm:w-auto sm:px-2 sm:py-1 sm:text-xs md:w-full"
+                                                disabled={isPending}
+                                                onClick={() =>
+                                                  openDialog(user, true)
+                                                }
+                                              >
+                                                <Swords className="mr-1 hidden h-3 w-3 text-black md:block" />
+                                                <span className="text-black">
+                                                  1v1
+                                                </span>
+                                              </Button>
+                                            </TooltipTrigger>
+                                            <TooltipContent className="border-none bg-black text-white">
+                                              <p className="text-center">
+                                                Highest biometric value wins{" "}
+                                                <br />
+                                                combined $ amounts
+                                              </p>
+                                            </TooltipContent>
+                                          </Tooltip>
+                                        </TooltipProvider>
+
+                                        <TooltipProvider>
+                                          <Tooltip>
+                                            <TooltipTrigger>
+                                              <Button
+                                                variant="outline"
+                                                className="w-[50px] px-1 py-0.5 text-[8px] sm:w-auto sm:px-2 sm:py-1 sm:text-xs md:w-full"
+                                                disabled={isPending}
+                                                onClick={() =>
+                                                  openDialog(user, false)
+                                                }
+                                              >
+                                                <CircleDollarSign className="mr-1 hidden h-3 w-3 text-black md:block" />
+                                                <span className="text-black">
+                                                  Sponsor
+                                                </span>
+                                              </Button>
+                                            </TooltipTrigger>
+                                            <TooltipContent className="border-none bg-black text-white">
+                                              <p className="w-full text-center">
+                                                Invest in other&apos;s health.{" "}
+                                                <br />
+                                                If their biometrics improve{" "}
+                                                <br />
+                                                compared to their previous
+                                                numbers, <br /> they receive
+                                                your investment; <br /> if not,
+                                                you get your money back
+                                              </p>
+                                            </TooltipContent>
+                                          </Tooltip>
+                                        </TooltipProvider>
                                       </div>
                                     </TableCell>
                                   </TableRow>
@@ -574,6 +676,46 @@ const Users = () => {
                 onSubmit={form.handleSubmit(onSubmit)}
                 className="space-y-4 text-white"
               >
+                <div className="mb-4 rounded-md bg-blue-500/15 p-4 text-sm text-blue-300 shadow-md">
+                  <div className="flex items-center gap-x-3">
+                    {form.watch("isTwoSided") ? (
+                      <Swords className="h-5 w-5" />
+                    ) : (
+                      <CircleDollarSign className="h-5 w-5" />
+                    )}
+                    <p className="font-medium">
+                      {form.watch("isTwoSided")
+                        ? "1v1 Challenge"
+                        : "Sponsor Challenge"}
+                    </p>
+                  </div>
+                  <p className="mt-2 pl-8">
+                    {form.watch("isTwoSided") ? (
+                      form.watch("activeTab") === "holistic" ? (
+                        <>
+                          Highest <i>average</i> biometric value wins combined $
+                          amounts
+                        </>
+                      ) : (
+                        <>Highest biometric value wins combined $ amounts</>
+                      )
+                    ) : form.watch("activeTab") === "holistic" ? (
+                      <>
+                        Invest in other&apos;s health. If their <i>average</i>{" "}
+                        biometrics improve compared to their previous numbers,
+                        they receive your investment; if not, you get your money
+                        back
+                      </>
+                    ) : (
+                      <>
+                        Invest in other&apos;s health. If their biometrics
+                        improve compared to their previous numbers, they receive
+                        your investment; if not, you get your money back
+                      </>
+                    )}
+                  </p>
+                </div>
+
                 <FormField
                   control={form.control}
                   name="endTime"
@@ -594,7 +736,12 @@ const Users = () => {
                   )}
                 />
 
-                <Tabs defaultValue="holistic" onValueChange={handleTabClick}>
+                <Tabs
+                  defaultValue="holistic"
+                  onValueChange={(value) =>
+                    handleTabClick(value as "holistic" | "isolated")
+                  }
+                >
                   <TabsList className="grid h-[60px] w-full grid-cols-2 bg-white/10">
                     <TabsTrigger
                       value="holistic"
@@ -610,90 +757,94 @@ const Users = () => {
                     </TabsTrigger>
                   </TabsList>
                   <TabsContent value="holistic">
-                    <div className="grid grid-cols-2 gap-4">
-                      {holisticTypes.map((type) => (
-                        <Card
-                          key={type.value}
-                          className={`min-h-[50px] cursor-pointer bg-white/10 text-white ${
-                            selectedHolisticType === type.value
-                              ? "border-2 border-blue-500"
-                              : "border-none"
-                          } ${type.disabled ? "opacity-50" : ""}`}
-                          onClick={() =>
-                            !type.disabled &&
-                            handleHolisticTypeSelect(type.value)
-                          }
-                        >
-                          <CardHeader className="px-1">
-                            <CardTitle className="md:text-md text-center text-sm text-white">
-                              {type.title}
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent className="text-xs text-white md:text-sm">
-                            <ul className="list-disc">
-                              {type.items.map((item, index) => (
-                                <li key={index}>{item}</li>
-                              ))}
-                            </ul>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-
                     <FormField
                       control={form.control}
                       name="holisticType"
                       render={({ field }) => (
                         <FormItem>
                           <FormControl>
-                            <input type="hidden" {...field} />
+                            <div className="grid grid-cols-2 gap-4">
+                              {holisticTypes.map((type) => (
+                                <Card
+                                  key={type.value}
+                                  className={`min-h-[50px] cursor-pointer bg-white/10 text-white ${
+                                    field.value === type.value
+                                      ? "border-2 border-blue-500"
+                                      : "border-none"
+                                  } ${type.disabled ? "opacity-50" : ""}`}
+                                  onClick={() => {
+                                    if (!type.disabled) {
+                                      field.onChange(type.value);
+                                      handleHolisticTypeSelect(
+                                        type.value as
+                                          | "all-around"
+                                          | "sleep"
+                                          | "workout",
+                                      );
+                                    }
+                                  }}
+                                >
+                                  <CardHeader className="px-1">
+                                    <CardTitle className="md:text-md text-center text-sm text-white">
+                                      {type.title}
+                                    </CardTitle>
+                                  </CardHeader>
+                                  <CardContent className="text-xs text-white md:text-sm">
+                                    <ul className="list-disc">
+                                      {type.items.map((item, index) => (
+                                        <li key={index}>{item}</li>
+                                      ))}
+                                    </ul>
+                                  </CardContent>
+                                </Card>
+                              ))}
+                            </div>
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
 
-                    {form.watch("holisticType") && (
-                      <FormField
-                        control={form.control}
-                        name="improvementPercentage"
-                        render={({ field }) => (
-                          <FormItem className="mt-3">
-                            <FormLabel className="text-white">
-                              Improvement Percentage
-                            </FormLabel>
-                            <Select
-                              onValueChange={field.onChange}
-                              value={field.value ?? undefined}
-                              disabled={
-                                isPending || !form.watch("holisticType")
-                              }
-                            >
-                              <FormControl>
-                                <SelectTrigger className="border-none bg-white/10 text-white">
-                                  <SelectValue placeholder="Select percentage" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent className="bg-[#001636] text-white">
-                                <SelectItem value="5">
-                                  5% Improvement
-                                </SelectItem>
-                                <SelectItem value="10">
-                                  10% Improvement
-                                </SelectItem>
-                                <SelectItem value="15">
-                                  15% Improvement
-                                </SelectItem>
-                                <SelectItem value="20">
-                                  20% Improvement
-                                </SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    )}
+                    {form.watch("holisticType") &&
+                      !form.watch("isTwoSided") && (
+                        <FormField
+                          control={form.control}
+                          name="improvementPercentage"
+                          render={({ field }) => (
+                            <FormItem className="mt-3">
+                              <FormLabel className="text-white">
+                                Improvement Percentage
+                              </FormLabel>
+                              <Select
+                                onValueChange={field.onChange}
+                                value={field.value ?? undefined}
+                                disabled={isPending}
+                              >
+                                <FormControl>
+                                  <SelectTrigger className="border-none bg-white/10 text-white">
+                                    <SelectValue placeholder="Select percentage" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent className="bg-[#001636] text-white">
+                                  <SelectItem value="5">
+                                    5% Improvement
+                                  </SelectItem>
+                                  <SelectItem value="10">
+                                    10% Improvement
+                                  </SelectItem>
+                                  <SelectItem value="15">
+                                    15% Improvement
+                                  </SelectItem>
+                                  <SelectItem value="20">
+                                    20% Improvement
+                                  </SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      )}
                   </TabsContent>
 
                   <TabsContent value="isolated">
@@ -745,172 +896,184 @@ const Users = () => {
                         </div>
                       )}
 
-                    <FormField
-                      control={form.control}
-                      name="targetType"
-                      render={({ field }) => (
-                        <FormItem className="mt-3">
-                          <FormLabel>Target Type</FormLabel>
-                          <FormControl>
-                            <RadioGroup
-                              onValueChange={field.onChange}
-                              defaultValue={field.value}
-                              disabled={isPending}
-                              className="text-white"
-                            >
-                              <FormItem>
-                                <FormLabel className="flex items-center gap-2">
-                                  <RadioGroupItem
-                                    value="improvement"
-                                    className="border-white text-white"
-                                  />
-                                  <span>Percentage</span>
-                                </FormLabel>
-                              </FormItem>
-                              <FormItem>
-                                <FormLabel className="flex items-center gap-2">
-                                  <RadioGroupItem
-                                    value="direct"
-                                    className="border-white text-white"
-                                  />
-                                  <span>Quantity</span>
-                                </FormLabel>
-                              </FormItem>
-                            </RadioGroup>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    {form.watch("targetType") === "direct" && (
-                      <FormField
-                        control={form.control}
-                        name="challengeTarget"
-                        render={({ field }) => (
-                          <FormItem className="mt-3">
-                            <FormLabel>
-                              Add{" "}
-                              {getChallengeTypeString(
-                                Number(form.watch("challengeType") ?? "0"),
-                              )}{" "}
-                              Challenge Target
-                            </FormLabel>
-                            <FormControl>
-                              <Input
-                                type="number"
-                                placeholder="Challenge Target"
-                                disabled={isPending}
-                                {...field}
-                                onChange={(e) => {
-                                  const challengeType = Number(
-                                    form.watch("challengeType") ?? "0",
-                                  );
-                                  let value = parseFloat(e.target.value);
-
-                                  if (challengeType === 1) {
-                                    value = Math.min(value, 21);
-                                  } else if (challengeType === 3) {
-                                    value = Math.min(value, 100);
-                                  }
-
-                                  field.onChange(value.toString());
-                                }}
-                                max={
-                                  Number(form.watch("challengeType")) === 1
-                                    ? 21
-                                    : Number(form.watch("challengeType")) === 3
-                                      ? 100
-                                      : undefined
-                                }
-                                className="border-none bg-white/10 text-white shadow-lg backdrop-blur-md"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    )}
-
-                    {!form.watch("holisticType") &&
-                      form.watch("targetType") === "improvement" && (
+                    {!form.watch("isTwoSided") && (
+                      <>
                         <FormField
                           control={form.control}
-                          name="improvementPercentage"
+                          name="targetType"
                           render={({ field }) => (
                             <FormItem className="mt-3">
-                              <FormLabel>Improvement Percentage</FormLabel>
+                              <FormLabel>Target Type</FormLabel>
                               <FormControl>
-                                <Select
-                                  onValueChange={(value) => {
-                                    field.onChange(value);
-                                    if (value === "custom") {
-                                      form.setValue("customImprovement", "");
-                                    }
-                                  }}
-                                  value={field.value ?? undefined}
+                                <RadioGroup
+                                  onValueChange={field.onChange}
+                                  defaultValue={field.value}
                                   disabled={isPending}
+                                  className="text-white"
                                 >
-                                  <SelectTrigger className="border-none bg-white/10 text-white">
-                                    <SelectValue placeholder="Select percentage" />
-                                  </SelectTrigger>
-                                  <SelectContent className="bg-[#001636] text-white">
-                                    <SelectItem value="5">
-                                      5% Increase
-                                    </SelectItem>
-                                    <SelectItem value="10">
-                                      10% Increase
-                                    </SelectItem>
-                                    <SelectItem value="15">
-                                      15% Increase
-                                    </SelectItem>
-                                    <SelectItem value="20">
-                                      20% Increase
-                                    </SelectItem>
-                                    <SelectItem value="custom">
-                                      Custom
-                                    </SelectItem>
-                                  </SelectContent>
-                                </Select>
+                                  <FormItem>
+                                    <FormLabel className="flex items-center gap-2">
+                                      <RadioGroupItem
+                                        value="improvement"
+                                        className="border-white text-white"
+                                      />
+                                      <span>Percentage</span>
+                                    </FormLabel>
+                                  </FormItem>
+                                  <FormItem>
+                                    <FormLabel className="flex items-center gap-2">
+                                      <RadioGroupItem
+                                        value="direct"
+                                        className="border-white text-white"
+                                      />
+                                      <span>Quantity</span>
+                                    </FormLabel>
+                                  </FormItem>
+                                </RadioGroup>
                               </FormControl>
                               <FormMessage />
                             </FormItem>
                           )}
                         />
-                      )}
 
-                    {!form.watch("holisticType") &&
-                      form.watch("targetType") === "improvement" &&
-                      form.watch("improvementPercentage") === "custom" && (
-                        <FormField
-                          control={form.control}
-                          name="customImprovement"
-                          render={({ field }) => (
-                            <FormItem className="mt-3">
-                              <FormLabel>
-                                Custom Improvement Percentage
-                              </FormLabel>
-                              <FormControl>
-                                <Input
-                                  type="number"
-                                  placeholder="Enter custom percentage"
-                                  {...field}
-                                  min={0}
-                                  onChange={(e) => {
-                                    const value = e.target.value;
-                                    if (value === "" || Number(value) <= 100) {
-                                      field.onChange(value);
+                        {form.watch("targetType") === "direct" && (
+                          <FormField
+                            control={form.control}
+                            name="challengeTarget"
+                            render={({ field }) => (
+                              <FormItem className="mt-3">
+                                <FormLabel>
+                                  Add{" "}
+                                  {getChallengeTypeString(
+                                    Number(form.watch("challengeType") ?? "0"),
+                                  )}{" "}
+                                  Challenge Target
+                                </FormLabel>
+                                <FormControl>
+                                  <Input
+                                    type="number"
+                                    placeholder="Challenge Target"
+                                    disabled={isPending}
+                                    {...field}
+                                    onChange={(e) => {
+                                      const challengeType = Number(
+                                        form.watch("challengeType") ?? "0",
+                                      );
+                                      let value = parseFloat(e.target.value);
+
+                                      if (challengeType === 1) {
+                                        value = Math.min(value, 21);
+                                      } else if (challengeType === 3) {
+                                        value = Math.min(value, 100);
+                                      }
+
+                                      field.onChange(value.toString());
+                                    }}
+                                    max={
+                                      Number(form.watch("challengeType")) === 1
+                                        ? 21
+                                        : Number(
+                                              form.watch("challengeType"),
+                                            ) === 3
+                                          ? 100
+                                          : undefined
                                     }
-                                  }}
-                                  disabled={isPending}
-                                  className="border-none bg-white/10 text-white shadow-lg backdrop-blur-md"
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
+                                    className="border-none bg-white/10 text-white shadow-lg backdrop-blur-md"
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        )}
+
+                        {!form.watch("holisticType") &&
+                          form.watch("targetType") === "improvement" && (
+                            <FormField
+                              control={form.control}
+                              name="improvementPercentage"
+                              render={({ field }) => (
+                                <FormItem className="mt-3">
+                                  <FormLabel>Improvement Percentage</FormLabel>
+                                  <FormControl>
+                                    <Select
+                                      onValueChange={(value) => {
+                                        field.onChange(value);
+                                        if (value === "custom") {
+                                          form.setValue(
+                                            "customImprovement",
+                                            "",
+                                          );
+                                        }
+                                      }}
+                                      value={field.value ?? undefined}
+                                      disabled={isPending}
+                                    >
+                                      <SelectTrigger className="border-none bg-white/10 text-white">
+                                        <SelectValue placeholder="Select percentage" />
+                                      </SelectTrigger>
+                                      <SelectContent className="bg-[#001636] text-white">
+                                        <SelectItem value="5">
+                                          5% Increase
+                                        </SelectItem>
+                                        <SelectItem value="10">
+                                          10% Increase
+                                        </SelectItem>
+                                        <SelectItem value="15">
+                                          15% Increase
+                                        </SelectItem>
+                                        <SelectItem value="20">
+                                          20% Increase
+                                        </SelectItem>
+                                        <SelectItem value="custom">
+                                          Custom
+                                        </SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
                           )}
-                        />
-                      )}
+
+                        {!form.watch("holisticType") &&
+                          form.watch("targetType") === "improvement" &&
+                          form.watch("improvementPercentage") === "custom" && (
+                            <FormField
+                              control={form.control}
+                              name="customImprovement"
+                              render={({ field }) => (
+                                <FormItem className="mt-3">
+                                  <FormLabel>
+                                    Custom Improvement Percentage
+                                  </FormLabel>
+                                  <FormControl>
+                                    <Input
+                                      type="number"
+                                      placeholder="Enter custom percentage"
+                                      {...field}
+                                      min={0}
+                                      onChange={(e) => {
+                                        const value = e.target.value;
+                                        if (
+                                          value === "" ||
+                                          Number(value) <= 100
+                                        ) {
+                                          field.onChange(value);
+                                        }
+                                      }}
+                                      disabled={isPending}
+                                      className="border-none bg-white/10 text-white shadow-lg backdrop-blur-md"
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          )}
+                      </>
+                    )}
                   </TabsContent>
                 </Tabs>
 

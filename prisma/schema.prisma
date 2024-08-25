@@ -17,6 +17,8 @@ model User {
   embeddedAddress     String? @unique
   smartAccountAddress String? @unique
 
+  challengeCompleted Int?     @default(0)
+
   whoopUserId       String?   @unique
   whoopAccessToken  String?
   whoopRefreshToken String?

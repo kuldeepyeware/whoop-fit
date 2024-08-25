@@ -89,24 +89,6 @@ export const userRouter = createTRPCRouter({
       return { success: true, user: newUser };
     }),
 
-  // trial: protectedProcedure.query(async ({ ctx }) => {
-  //   const user = await ctx.db.user.findUnique({
-  //     where: { privyId: ctx.privyUserId },
-  //   });
-
-  //   if (!user) {
-  //     throw new TRPCError({
-  //       code: "NOT_FOUND",
-  //       message: "User not found",
-  //     });
-  //   }
-
-  //   // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain
-  //   const token = await getWhoopAccessToken(user?.whoopUserId!);
-
-  //   console.log("Token", token);
-  // }),
-
   getUsersWithMetrics: protectedProcedure
     .input(
       z.object({
@@ -297,7 +279,9 @@ export const userRouter = createTRPCRouter({
 
           const averageSleepHoursPerDay =
             totalSleepHours / challengeDurationDays;
+
           targetReached = averageSleepHoursPerDay >= Number(challengeTarget);
+
           break;
 
         case 3: // Recovery
@@ -403,6 +387,7 @@ export const userRouter = createTRPCRouter({
             3;
 
           targetReached = averageSleepSage >= Number(challengeTarget);
+
           break;
 
         case 6: // Workout Wizard
@@ -458,8 +443,18 @@ export const userRouter = createTRPCRouter({
             challengeId,
             targetReached,
           );
+
           // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
           await tx.wait();
+
+          await ctx.db.user.update({
+            where: { privyId: ctx?.privyUserId },
+            data: {
+              challengeCompleted: {
+                increment: 1,
+              },
+            },
+          });
         } else {
           throw new TRPCError({
             code: "INTERNAL_SERVER_ERROR",
@@ -501,7 +496,6 @@ export const userRouter = createTRPCRouter({
         startTime,
         endTime,
         challengeType,
-        challengeTarget,
       } = input;
 
       const challengerData = await ctx.db.user.findUnique({
@@ -717,15 +711,8 @@ export const userRouter = createTRPCRouter({
       challengerAverage = calculateAverage(challengerData);
       challengedAverage = calculateAverage(challengedData);
 
-      const challengerDifference = Math.abs(
-        Number(challengeTarget) - challengerAverage,
-      );
-      const challengedDifference = Math.abs(
-        Number(challengeTarget) - challengedAverage,
-      );
-
-      // const targetReached = challengerDifference <= challengedDifference;
-      const targetReached = challengedDifference < challengerDifference;
+      const targetReached = challengerAverage > challengedAverage;
+      // const targetReached = challengedAverage < challengerAverage;
 
       try {
         const privateKey = env.PRIVATE_KEY;
@@ -748,6 +735,24 @@ export const userRouter = createTRPCRouter({
           );
           // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
           await tx.wait();
+
+          await ctx.db.user.update({
+            where: { smartAccountAddress: challenger },
+            data: {
+              challengeCompleted: {
+                increment: 1,
+              },
+            },
+          });
+
+          await ctx.db.user.update({
+            where: { smartAccountAddress: challenged },
+            data: {
+              challengeCompleted: {
+                increment: 1,
+              },
+            },
+          });
         } else {
           throw new TRPCError({
             code: "INTERNAL_SERVER_ERROR",

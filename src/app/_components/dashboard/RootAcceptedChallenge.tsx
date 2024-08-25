@@ -64,10 +64,33 @@ const RootAcceptedChallenge = () => {
       },
     });
 
+  const { mutateAsync: updateTargetMutation1v1, isPending: Pending1v1 } =
+    api.user.update1v1ChallengeStatus.useMutation({
+      onSuccess: async () => {
+        toast({
+          title: "Result Evaluated successfully!",
+        });
+
+        setCheckingResultId(null);
+
+        await refetchAcceptedChallenges();
+      },
+      onError: async () => {
+        toast({
+          title: "Something went wrong, Please try again later!",
+        });
+        setCheckingResultId(null);
+      },
+    });
+
   const handleResult = async (challenge: Challenge) => {
     setCheckingResultId(challenge.challengeId);
     if (Number(challenge.status) == 1) {
-      await updateTargetMutation(challenge);
+      if (challenge.isTwoSided) {
+        await updateTargetMutation1v1(challenge);
+      } else {
+        await updateTargetMutation(challenge);
+      }
     } else {
       await refetchAcceptedChallenges();
     }
@@ -109,10 +132,14 @@ const RootAcceptedChallenge = () => {
                     </Badge>
                   </div>
                   <div className="mb-4">
-                    <p className="text-sm">
-                      <span className="font-semibold">Target:</span>{" "}
-                      {challenge.challengeTarget.toString()}
-                    </p>
+                    {!challenge.isTwoSided && (
+                      <p className="text-sm">
+                        <span className="font-semibold">Target:</span>{" "}
+                        {[4, 5, 6].includes(challenge.challengeType)
+                          ? `${challenge.challengeTarget.toString()}% Improvement`
+                          : challenge.challengeTarget.toString()}
+                      </p>
+                    )}
                     <p className="text-sm">
                       <span className="font-semibold">Amount:</span>{" "}
                       {challenge.challengerAmount.toString()}
@@ -142,7 +169,8 @@ const RootAcceptedChallenge = () => {
                             isPending ||
                             !privyReady ||
                             !walletReady ||
-                            !authenticated
+                            !authenticated ||
+                            Pending1v1
                           }
                         >
                           {checkingResultId === challenge.challengeId

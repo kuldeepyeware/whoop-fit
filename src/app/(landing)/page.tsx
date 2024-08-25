@@ -21,8 +21,9 @@ const LandingPage = () => {
           <h1 className="mb-5 h-14 text-5xl font-extrabold text-white">
             Sovereign, Incentivized Health
           </h1>
-          <h2 className="mb-10 text-2xl font-normal text-white">
-            Pairing measurable biometric data with financial <br />
+          <h2 className="mb-10 mt-28 w-full text-center text-lg font-normal text-white md:mt-0 md:text-2xl">
+            Pairing measurable biometric data with financial{" "}
+            <br className="hidden md:block" />
             incentives to achieve lasting health goals.
           </h2>
           <Link
