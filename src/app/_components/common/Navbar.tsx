@@ -26,6 +26,7 @@ import { useSmartAccount } from "@/hooks/smartAccountContext";
 import { encodeFunctionData } from "viem";
 import { tokenAbi, tokenAddress } from "TokenContract";
 import { useToast } from "../ui/use-toast";
+import { useReadContract } from "wagmi";
 
 const links = [
   {
@@ -48,6 +49,13 @@ const Navbar = () => {
     useSmartAccount();
   const router = useRouter();
   const { toast } = useToast();
+
+  const { data: userBalance } = useReadContract({
+    address: tokenAddress,
+    abi: tokenAbi,
+    functionName: "balanceOf",
+    args: [smartAccountAddress],
+  });
 
   useEffect(() => {
     const checkMintCooldown = () => {
@@ -236,6 +244,9 @@ const Navbar = () => {
               </DropdownMenuItem> */}
               <DropdownMenuItem disabled={!canMint} onClick={handleMint}>
                 {canMint ? "Mint Tokens" : "Mint (24h cooldown)"}
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                Balance: ${userBalance ? String(userBalance) : 0}
               </DropdownMenuItem>
               <DropdownMenuItem
                 disabled={!authenticated}

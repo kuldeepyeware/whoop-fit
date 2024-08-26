@@ -3,18 +3,18 @@ import Link from "next/link";
 
 const Footer = () => {
   return (
-    <footer className="bg-[#001636] text-white">
+    <footer className="bg-[#001636 text-white">
       {/* Mobile footer */}
       <div className="px-4 py-6 md:hidden">
         <div className="flex flex-col space-y-4">
-          <div className="flex flex-col space-y-2">
-            {/* <Link href="" className="text-sm hover:underline">
+          {/* <div className="flex flex-col space-y-2">
+            <Link href="" className="text-sm hover:underline">
               Privacy Policy
             </Link>
             <Link href="" className="text-sm hover:underline">
               Terms of Service
-            </Link> */}
-          </div>
+            </Link>
+          </div> */}
           <Link
             href="https://docs.google.com/forms/d/e/1FAIpQLSeevXIMEPaNFhqhWw3bTjZHrs6wgDMhoJERHbVZnACAnamJ0Q/viewform"
             target="_blank"
@@ -30,24 +30,20 @@ const Footer = () => {
       </div>
 
       {/* Desktop footer */}
-      <div className="hidden px-4 py-8 md:block">
+      <div className="hidden px-4 py-4 md:block">
         <div className="container mx-auto">
-          <div className="flex flex-col items-center justify-between space-y-4 md:flex-row md:space-y-0">
+          <div className="flex flex-col items-center justify-between space-y-4 p-4 md:flex-row md:space-x-4 md:space-y-0">
             <div>
-              <p>&copy; 2024 Fitcentive. All rights reserved.</p>
+              <p className="text-white">
+                &copy; 2024 Fitcentive. All rights reserved.
+              </p>
             </div>
-            <div className="flex flex-col items-center space-y-2 md:flex-row md:space-x-4 md:space-y-0">
-              {/* <Link href="" className="hover:underline">
-                Privacy Policy
-              </Link>
-              <Link href="" className="hover:underline">
-                Terms of Service
-              </Link> */}
+            <div>
               <Link
                 href="https://docs.google.com/forms/d/e/1FAIpQLSeevXIMEPaNFhqhWw3bTjZHrs6wgDMhoJERHbVZnACAnamJ0Q/viewform"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mb-10 rounded bg-white px-4 py-2 text-center text-[#001636] transition-colors hover:bg-opacity-90"
+                className="rounded bg-white px-4 py-2 text-center text-[#001636] transition-colors hover:bg-opacity-90"
               >
                 Provide Feedback
               </Link>

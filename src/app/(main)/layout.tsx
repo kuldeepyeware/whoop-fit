@@ -5,9 +5,9 @@ import Footer from "../_components/common/Footer";
 
 const MainLayout = ({ children }: { children: React.ReactElement }) => {
   return (
-    <main>
+    <main className="flex min-h-screen flex-col">
       <Navbar />
-      <div className="min-h-screen"> {children}</div>
+      <div className="calc(100vh - 64px) flex-grow"> {children}</div>
       <Footer />
       <Toaster />
     </main>

@@ -644,14 +644,14 @@ const Users = () => {
                         </CardFooter>
                       </>
                     ) : (
-                      <div className="ml-7 flex min-h-[200px] items-center justify-center text-xl font-medium text-white">
+                      <div className="flex min-h-[200px] items-center justify-center text-xl font-medium text-white">
                         No users found
                       </div>
                     )}
                   </>
                 ) : (
                   <>
-                    <div className="ml-7 flex min-h-[200px] items-center justify-center text-xl font-medium text-red-400">
+                    <div className="flex min-h-[200px] items-center justify-center text-center text-xl font-medium text-red-400">
                       Add whoop connection to proceed
                     </div>
                   </>
