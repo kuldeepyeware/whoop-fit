@@ -43,6 +43,14 @@ const Footer = () => {
               <Link href="" className="hover:underline">
                 Terms of Service
               </Link> */}
+              <Link
+                href="https://docs.google.com/forms/d/1mFjQ9DvCelJzhkEsIsaBAhdY-4tmkJtp_ysJGWXyqa8/edit"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mb-10 rounded bg-white px-4 py-2 text-center text-[#001636] transition-colors hover:bg-opacity-90"
+              >
+                Provide Feedback
+              </Link>
             </div>
           </div>
         </div>
