@@ -16,7 +16,7 @@ const Footer = () => {
             </Link> */}
           </div>
           <Link
-            href="https://docs.google.com/forms/d/1mFjQ9DvCelJzhkEsIsaBAhdY-4tmkJtp_ysJGWXyqa8/edit"
+            href="https://docs.google.com/forms/d/e/1FAIpQLSeevXIMEPaNFhqhWw3bTjZHrs6wgDMhoJERHbVZnACAnamJ0Q/viewform"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-block rounded-full bg-white px-4 py-2 text-center text-sm font-medium text-[#001636]"
@@ -44,7 +44,7 @@ const Footer = () => {
                 Terms of Service
               </Link> */}
               <Link
-                href="https://docs.google.com/forms/d/1mFjQ9DvCelJzhkEsIsaBAhdY-4tmkJtp_ysJGWXyqa8/edit"
+                href="https://docs.google.com/forms/d/e/1FAIpQLSeevXIMEPaNFhqhWw3bTjZHrs6wgDMhoJERHbVZnACAnamJ0Q/viewform"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="mb-10 rounded bg-white px-4 py-2 text-center text-[#001636] transition-colors hover:bg-opacity-90"
