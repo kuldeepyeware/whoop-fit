@@ -92,7 +92,7 @@ const UserInfo = () => {
       >
         <section>
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-white md:text-2xl">
+            <h2 className="max-w-[130px] text-lg font-bold text-white md:max-w-full md:text-2xl">
               Your Whoop Profile
             </h2>
             <Button

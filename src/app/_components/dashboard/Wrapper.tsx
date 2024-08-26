@@ -6,6 +6,9 @@ import { usePrivy } from "@privy-io/react-auth";
 import { api } from "@/trpc/react";
 import { useSmartAccount } from "@/hooks/smartAccountContext";
 import { useRouter } from "next/navigation";
+import { encodeFunctionData } from "viem";
+import { tokenAbi, tokenAddress } from "TokenContract";
+import { useToast } from "../ui/use-toast";
 
 type DashboardWrapperProps = {
   children: React.ReactNode;
@@ -13,9 +16,10 @@ type DashboardWrapperProps = {
 
 const DashboardWrapper: React.FC<DashboardWrapperProps> = ({ children }) => {
   const { user, authenticated } = usePrivy();
-  const { smartAccountAddress } = useSmartAccount();
+  const { smartAccountAddress, sendUserOperation } = useSmartAccount();
   const [isRegistered, setIsRegistered] = useState<boolean | null>(null);
   const router = useRouter();
+  const { toast } = useToast();
 
   const {
     data: registrationStatus,
@@ -31,10 +35,33 @@ const DashboardWrapper: React.FC<DashboardWrapperProps> = ({ children }) => {
   );
 
   const register = api.user.register.useMutation({
-    onSuccess: () => {
+    onSuccess: async () => {
       setIsRegistered(true);
+
+      const mintAmount = 500;
+
+      const mintCallData = encodeFunctionData({
+        abi: tokenAbi,
+        functionName: "mint",
+        args: [mintAmount],
+      });
+
+      try {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        await sendUserOperation({
+          to: tokenAddress,
+          data: mintCallData,
+        });
+
+        toast({
+          title: `Added 500 MockUSDC to you account address`,
+        });
+      } catch (error) {
+        console.error("Minting failed:", error);
+      }
     },
-    onError: (error) => {
+    onError: async (error) => {
       console.error("Registration error:", error);
     },
   });

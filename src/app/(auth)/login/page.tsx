@@ -58,6 +58,10 @@ const Login = () => {
     }
   }, [ready, authenticated, user, router]);
 
+  if (authenticated) {
+    router.push("/dashboard");
+  }
+
   return (
     <main className="flex h-screen w-screen flex-col items-center justify-center">
       <h1 className="text-3xl font-bold text-white">Welcome to Fitcentive</h1>

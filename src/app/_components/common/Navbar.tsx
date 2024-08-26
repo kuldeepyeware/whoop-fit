@@ -5,7 +5,6 @@ import { usePrivy } from "@privy-io/react-auth";
 import {
   Sheet,
   SheetContent,
-  SheetDescription,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
@@ -170,7 +169,10 @@ const Navbar = () => {
                 </span>
               </Link>
             </SheetTitle>
-            <SheetDescription className="space-y-2">
+          </SheetHeader>
+
+          <div className="flex h-full flex-col">
+            <nav className="mt-5 flex-grow space-y-2">
               {links.map((link) => {
                 const isActive = pathname === link.href;
                 return (
@@ -188,8 +190,17 @@ const Navbar = () => {
                   </Link>
                 );
               })}
-            </SheetDescription>
-          </SheetHeader>
+            </nav>
+
+            <Link
+              href="https://docs.google.com/forms/d/1mFjQ9DvCelJzhkEsIsaBAhdY-4tmkJtp_ysJGWXyqa8/edit"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mb-10 rounded bg-white px-4 py-2 text-center text-[#001636] transition-colors hover:bg-opacity-90"
+            >
+              Provide Feedback
+            </Link>
+          </div>
         </SheetContent>
       </Sheet>
       <Link
