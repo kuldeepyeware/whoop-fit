@@ -19,7 +19,7 @@ const ChallengeCardSkeleton = () => {
           {Array.from({ length: 4 }).map((_, index) => (
             <Card
               key={index}
-              className="mb-4 w-[320px] rounded-lg border-none bg-gray-700 p-6 shadow-md"
+              className="mb-4 w-[312px] rounded-lg border-none bg-gray-700 p-6 shadow-md"
             >
               <div className="flex h-full flex-col justify-between">
                 <div className="mb-2">

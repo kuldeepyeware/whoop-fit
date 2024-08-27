@@ -39,27 +39,30 @@ const CreatedChallenge: React.FC<CreatedChallengeProps> = ({
     return <ChallengeCardSkeleton />;
   }
 
+  if (createdChallenges?.length <= 0) return null;
+
   return (
     <section>
-      <CardHeader>
-        <CardTitle className="text-white">Created Challenges</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="flex flex-wrap justify-center gap-4 md:justify-start">
-          {createdChallenges.length > 0 ? (
-            createdChallenges.map((challenge, index) => (
-              <ChallengeCard
-                key={index}
-                challenge={challenge}
-                address={smartAccountAddress as string}
-                onClaimComplete={render}
-              />
-            ))
-          ) : (
-            <p className="text-white">No Created challenges</p>
-          )}
-        </div>
-      </CardContent>
+      {createdChallenges?.length > 0 && (
+        <>
+          <CardHeader>
+            <CardTitle className="text-white">Created Challenges</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap justify-center gap-4 md:justify-start">
+              {createdChallenges.length > 0 &&
+                createdChallenges.map((challenge, index) => (
+                  <ChallengeCard
+                    key={index}
+                    challenge={challenge}
+                    address={smartAccountAddress as string}
+                    onClaimComplete={render}
+                  />
+                ))}
+            </div>
+          </CardContent>
+        </>
+      )}
     </section>
   );
 };

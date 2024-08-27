@@ -123,6 +123,11 @@ interface ProfileDataRecovery {
   restingHeartRate: string;
 }
 
+interface MetricData {
+  value: number;
+  change: number;
+}
+
 interface ProfileUserData {
   smartAccountAddress: string | null;
   id?: string | null;
@@ -132,10 +137,15 @@ interface ProfileUserData {
     lastName: string;
     userId?: string;
   }[];
-  whoopCycles: ProfileDataCycle[];
-  whoopRecoveries: ProfileDataRecovery[];
-  whoopSleeps: ProfileDataSleep[];
   challengeCompleted: number;
+  metrics: {
+    strain: MetricData;
+    calories: MetricData;
+    sleepEfficiency: MetricData;
+    recoveryScore: MetricData;
+    hrv: MetricData;
+    restingHeartRate: MetricData;
+  };
 }
 
 interface UserListData {

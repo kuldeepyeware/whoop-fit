@@ -19,6 +19,7 @@ import { useSmartAccount } from "@/hooks/smartAccountContext";
 import { useReadContract } from "wagmi";
 import { WhoopTokenAbi, WhoopTokenAddress } from "WhoopContract";
 import Link from "next/link";
+import renderMetricCard from "../challenge/MetricCard";
 
 const UserInfo = () => {
   const [isConnected, setIsConnected] = useState(false);
@@ -149,64 +150,44 @@ const UserInfo = () => {
                 </div>
                 <div className="grid gap-4">
                   <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                    <Card className="border-none bg-white/10 p-4 text-white shadow-lg backdrop-blur-md">
-                      <div className="text-3xl font-bold md:text-4xl">
-                        {Number(whoopData?.whoopCycles[0]?.strain ?? 0).toFixed(
-                          1,
-                        )}
-                      </div>
-                      <div className="text-sm"> Strain</div>
-                    </Card>
+                    {renderMetricCard(
+                      "Strain",
+                      whoopData?.metrics.strain.value,
+                      whoopData?.metrics.strain.change,
+                    )}
+                    {renderMetricCard(
+                      "Recovery Score",
+                      whoopData?.metrics.recoveryScore.value,
+                      whoopData?.metrics.recoveryScore.change,
+                    )}
+                    {renderMetricCard(
+                      "Sleep Efficiency",
+                      whoopData?.metrics.sleepEfficiency.value,
+                      whoopData?.metrics.sleepEfficiency.change,
+                    )}
+                    {renderMetricCard(
+                      "Calories",
+                      whoopData?.metrics.calories.value,
+                      whoopData?.metrics.calories.change,
+                    )}
+                    {renderMetricCard(
+                      "Heart Rate Variability",
+                      whoopData?.metrics.hrv.value,
+                      whoopData?.metrics.hrv.change,
+                    )}
+                    {renderMetricCard(
+                      "Resting Heart Rate",
+                      whoopData?.metrics.restingHeartRate.value,
+                      whoopData?.metrics.restingHeartRate.change,
+                    )}
 
-                    <Card className="border-none bg-white/10 p-4 text-white shadow-lg backdrop-blur-md">
-                      <div className="text-3xl font-bold md:text-4xl">
-                        {Number(
-                          whoopData?.whoopRecoveries[0]?.recoveryScore ?? 0,
-                        ).toFixed(2)}
-                        %
-                      </div>
-                      <div className="text-sm">Recovery Score</div>
-                    </Card>
-
-                    <Card className="border-none bg-white/10 p-4 text-white shadow-lg backdrop-blur-md">
-                      <div className="text-3xl font-bold md:text-4xl">
-                        {Number(
-                          whoopData?.whoopSleeps[0]
-                            ?.sleepEfficiencyPercentage ?? 0,
-                        ).toFixed(2)}
-                        %
-                      </div>
-                      <div className="text-sm"> Sleep Efficiency</div>
-                    </Card>
-                    <Card className="border-none bg-white/10 p-4 text-white shadow-lg backdrop-blur-md">
-                      <div className="text-3xl font-bold md:text-4xl">
-                        {Number(
-                          Number(whoopData?.whoopCycles[0]?.kilojoule ?? 0) *
-                            0.239006 ?? 0,
-                        ).toFixed(1)}
-                      </div>
-                      <div className="text-sm">Calories</div>
-                    </Card>
-                    <Card className="border-none bg-white/10 p-4 text-white shadow-lg backdrop-blur-md">
-                      <div className="text-3xl font-bold md:text-4xl">
-                        {Number(
-                          whoopData?.whoopRecoveries[0]?.hrvRmssd ?? 0,
-                        ).toFixed(1)}
-                      </div>
-                      <div className="text-sm">Heart Rate Variability</div>
-                    </Card>
-                    <Card className="border-none bg-white/10 p-4 text-white shadow-lg backdrop-blur-md">
-                      <div className="text-3xl font-bold md:text-4xl">
-                        {whoopData?.whoopRecoveries[0]?.restingHeartRate ?? 0}
-                      </div>
-                      <div className="text-sm">Resting Heart Rate</div>
-                    </Card>
                     <Card className="border-none bg-white/10 p-4 text-white shadow-lg backdrop-blur-md">
                       <div className="text-3xl font-bold md:text-4xl">
                         {whoopData?.challengeCompleted ?? 0}
                       </div>
                       <div className="text-sm">Challenges Completed</div>
                     </Card>
+
                     <Card className="border-none bg-white/10 p-4 text-white shadow-lg backdrop-blur-md">
                       <div className="text-3xl font-bold md:text-4xl">
                         {Number(moneyEarnedData ?? 0)} USDC

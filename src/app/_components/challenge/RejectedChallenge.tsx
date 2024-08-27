@@ -35,68 +35,73 @@ const RejectedChallenge: React.FC<RejectedChallengeProps> = ({
     return <ChallengeCardSkeleton />;
   }
 
+  if (rejectedChallenges?.length <= 0) return null;
+
   return (
     <section>
-      <CardHeader>
-        <CardTitle className="text-white">Rejected Challenges</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="flex flex-wrap justify-center gap-4 md:justify-start">
-          {rejectedChallenges.length > 0 ? (
-            rejectedChallenges.map((challenge, index) => (
-              <Card
-                key={index}
-                className="mb-4 w-[320px] rounded-lg border-none bg-white/10 p-6 text-white shadow-lg backdrop-blur-md transition-shadow duration-300 hover:shadow-lg"
-              >
-                <div className="flex h-full flex-col justify-between">
-                  <div className="mb-2 flex items-center justify-between">
-                    <h3 className="text-xl font-bold">
-                      {getChallengeTypeString(challenge.challengeType)}
-                    </h3>
-                    <Badge
-                      className="rounded-md px-2 py-1 text-xs"
-                      variant={getBadgeVariant(challenge.status)}
-                    >
-                      {getBadgeVariant(challenge.status)}
-                    </Badge>
-                  </div>
-                  <div className="mb-4">
-                    {!challenge.isTwoSided && (
-                      <p className="text-sm">
-                        <span className="font-semibold">Target:</span>{" "}
-                        {[4, 5, 6].includes(challenge.challengeType)
-                          ? `${challenge.challengeTarget.toString()}% Improvement`
-                          : challenge.challengeTarget.toString()}
-                      </p>
-                    )}
-                    <p className="text-sm">
-                      <span className="font-semibold">Amount:</span>{" "}
-                      {challenge.challengerAmount.toString()} USDC
-                    </p>
-                    <p className="text-sm">
-                      <span className="font-semibold">1v1:</span>{" "}
-                      {challenge.isTwoSided ? "Yes" : "No"}
-                    </p>
-                    {challenge.status == (4 || 3) && (
-                      <p className="text-sm">
-                        <span className="font-semibold">Target Reached:</span>{" "}
-                        {challenge.targetReached ? "Yes" : "No"}
-                      </p>
-                    )}
-                    <p className="text-sm">
-                      <span className="font-semibold">Challenger:</span>{" "}
-                      {challenge.challenger.slice(0, 6)}...
-                      {challenge.challenger.slice(-4)}
-                    </p>
-                  </div>
-                </div>
-              </Card>
-            ))
-          ) : (
-            <p className="text-white">No rejected challenges</p>
-          )}
-        </div>
-      </CardContent>
+      {rejectedChallenges?.length > 0 && (
+        <>
+          <CardHeader>
+            <CardTitle className="text-white">Rejected Challenges</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap justify-center gap-4 md:justify-start">
+              {rejectedChallenges.length > 0 &&
+                rejectedChallenges.map((challenge, index) => (
+                  <Card
+                    key={index}
+                    className="mb-4 w-[320px] rounded-lg border-none bg-white/10 p-6 text-white shadow-lg backdrop-blur-md transition-shadow duration-300 hover:shadow-lg"
+                  >
+                    <div className="flex h-full flex-col justify-between">
+                      <div className="mb-2 flex items-center justify-between">
+                        <h3 className="text-xl font-bold">
+                          {getChallengeTypeString(challenge.challengeType)}
+                        </h3>
+                        <Badge
+                          className="rounded-md px-2 py-1 text-xs"
+                          variant={getBadgeVariant(challenge.status)}
+                        >
+                          {getBadgeVariant(challenge.status)}
+                        </Badge>
+                      </div>
+                      <div className="mb-4">
+                        {!challenge.isTwoSided && (
+                          <p className="text-sm">
+                            <span className="font-semibold">Target:</span>{" "}
+                            {[4, 5, 6].includes(challenge.challengeType)
+                              ? `${challenge.challengeTarget.toString()}% Improvement`
+                              : challenge.challengeTarget.toString()}
+                          </p>
+                        )}
+                        <p className="text-sm">
+                          <span className="font-semibold">Amount:</span>{" "}
+                          {challenge.challengerAmount.toString()} USDC
+                        </p>
+                        <p className="text-sm">
+                          <span className="font-semibold">1v1:</span>{" "}
+                          {challenge.isTwoSided ? "Yes" : "No"}
+                        </p>
+                        {challenge.status == (4 || 3) && (
+                          <p className="text-sm">
+                            <span className="font-semibold">
+                              Target Reached:
+                            </span>{" "}
+                            {challenge.targetReached ? "Yes" : "No"}
+                          </p>
+                        )}
+                        <p className="text-sm">
+                          <span className="font-semibold">Challenger:</span>{" "}
+                          {challenge.challenger.slice(0, 6)}...
+                          {challenge.challenger.slice(-4)}
+                        </p>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+            </div>
+          </CardContent>
+        </>
+      )}
     </section>
   );
 };

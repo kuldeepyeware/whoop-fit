@@ -30,10 +30,6 @@ import { useReadContract } from "wagmi";
 
 const links = [
   {
-    href: "/challenges",
-    name: "Profile",
-  },
-  {
     href: "/users",
     name: "Challenge Others",
   },

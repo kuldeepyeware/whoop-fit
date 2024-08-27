@@ -7,6 +7,7 @@ import {
 } from "@/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { env } from "@/env";
+import { subDays } from "date-fns";
 import crypto from "crypto";
 import {
   fetchWhoopProfile,
@@ -301,6 +302,8 @@ export const whoopRouter = createTRPCRouter({
   }),
 
   getWhoopProfileData: protectedProcedure.query(async ({ ctx }) => {
+    const sevenDaysAgo = subDays(new Date(), 7);
+
     const user = await ctx.db.user.findUnique({
       where: { privyId: ctx.privyUserId },
       select: {
@@ -316,34 +319,30 @@ export const whoopRouter = createTRPCRouter({
           },
         },
         whoopCycles: {
-          orderBy: {
-            createdAt: "asc",
+          where: {
+            createdAtByWhoop: { gte: sevenDaysAgo },
           },
-          take: 1,
-          select: {
-            strain: true,
-            kilojoule: true,
-          },
+          orderBy: { createdAtByWhoop: "desc" },
+          select: { strain: true, kilojoule: true, createdAtByWhoop: true },
         },
         whoopRecoveries: {
-          orderBy: {
-            createdAt: "asc",
+          where: {
+            createdAtByWhoop: { gte: sevenDaysAgo },
           },
-          take: 1,
+          orderBy: { createdAtByWhoop: "desc" },
           select: {
             recoveryScore: true,
             hrvRmssd: true,
             restingHeartRate: true,
+            createdAtByWhoop: true,
           },
         },
         whoopSleeps: {
-          orderBy: {
-            createdAt: "asc",
+          where: {
+            createdAtByWhoop: { gte: sevenDaysAgo },
           },
-          take: 1,
-          select: {
-            sleepEfficiencyPercentage: true,
-          },
+          orderBy: { createdAtByWhoop: "desc" },
+          select: { sleepEfficiencyPercentage: true, createdAtByWhoop: true },
         },
       },
     });
@@ -355,7 +354,75 @@ export const whoopRouter = createTRPCRouter({
       });
     }
 
-    return user;
+    const calculateChange = (data: { value: number | null; date: Date }[]) => {
+      if (data.length < 2) return 0;
+      const latest = data[0]?.value;
+      const oldest = data[data.length - 1]?.value;
+      if (
+        latest === undefined ||
+        oldest === undefined ||
+        latest === null ||
+        oldest === null ||
+        oldest === 0
+      )
+        return 0;
+      return ((latest - oldest) / oldest) * 100;
+    };
+
+    const getLatestAndChange = (
+      data: { value: number | null; date: Date }[],
+    ) => {
+      if (data.length === 0) return { value: 0, change: 0 };
+      const filteredData = data.filter(
+        (item): item is { value: number; date: Date } => item.value !== null,
+      );
+      return {
+        value: filteredData[0]?.value ?? 0,
+        change: calculateChange(filteredData),
+      };
+    };
+
+    const strain = user.whoopCycles.map((c) => ({
+      value: c.strain,
+      date: c.createdAtByWhoop,
+    }));
+
+    const calories = user.whoopCycles.map((c) => ({
+      value: Number(c.kilojoule) * 0.239006,
+      date: c.createdAtByWhoop,
+    }));
+
+    const recoveryScore = user.whoopRecoveries.map((r) => ({
+      value: r.recoveryScore,
+      date: r.createdAtByWhoop,
+    }));
+
+    const hrv = user.whoopRecoveries.map((r) => ({
+      value: r.hrvRmssd,
+      date: r.createdAtByWhoop,
+    }));
+
+    const restingHeartRate = user.whoopRecoveries.map((r) => ({
+      value: r.restingHeartRate,
+      date: r.createdAtByWhoop,
+    }));
+
+    const sleepEfficiency = user.whoopSleeps.map((s) => ({
+      value: s.sleepEfficiencyPercentage,
+      date: s.createdAtByWhoop,
+    }));
+
+    return {
+      ...user,
+      metrics: {
+        strain: getLatestAndChange(strain),
+        calories: getLatestAndChange(calories),
+        recoveryScore: getLatestAndChange(recoveryScore),
+        hrv: getLatestAndChange(hrv),
+        restingHeartRate: getLatestAndChange(restingHeartRate),
+        sleepEfficiency: getLatestAndChange(sleepEfficiency),
+      },
+    };
   }),
 
   getWhoopPublicProfileData: publicProcedure

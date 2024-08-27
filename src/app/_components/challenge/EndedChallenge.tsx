@@ -39,27 +39,30 @@ const EndedChallenge: React.FC<EndedChallengeProps> = ({
     return <ChallengeCardSkeleton />;
   }
 
+  if (endedChallenges?.length <= 0) return null;
+
   return (
     <section>
-      <CardHeader>
-        <CardTitle className="text-white">Ended Challenges</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="flex flex-wrap justify-center gap-4 md:justify-start">
-          {endedChallenges.length > 0 ? (
-            endedChallenges.map((challenge, index) => (
-              <ChallengeCard
-                key={index}
-                challenge={challenge}
-                address={smartAccountAddress as string}
-                onClaimComplete={render}
-              />
-            ))
-          ) : (
-            <p className="text-white">No ended challenges</p>
-          )}
-        </div>
-      </CardContent>
+      {endedChallenges?.length > 0 && (
+        <>
+          <CardHeader>
+            <CardTitle className="text-white">Ended Challenges</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap justify-center gap-4 md:justify-start">
+              {endedChallenges.length > 0 &&
+                endedChallenges.map((challenge, index) => (
+                  <ChallengeCard
+                    key={index}
+                    challenge={challenge}
+                    address={smartAccountAddress as string}
+                    onClaimComplete={render}
+                  />
+                ))}
+            </div>
+          </CardContent>
+        </>
+      )}
     </section>
   );
 };

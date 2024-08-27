@@ -110,81 +110,84 @@ const AcceptedChallenge: React.FC<AcceptedChallengeProps> = ({
     return <ChallengeCardSkeleton />;
   }
 
+  if (acceptedChallenges?.length <= 0) return null;
+
   return (
     <section>
-      <CardHeader>
-        <CardTitle className="text-white">Active Challenges</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="flex flex-wrap justify-center gap-4 md:justify-start">
-          {acceptedChallenges.length > 0 ? (
-            acceptedChallenges.map((challenge, index) => (
-              <Card
-                key={index}
-                className="mb-4 w-[320px] rounded-lg border-none bg-white/10 p-6 text-white shadow-lg backdrop-blur-md transition-shadow duration-300 hover:shadow-lg"
-              >
-                <div className="flex h-full flex-col justify-between">
-                  <div className="mb-2 flex items-center justify-between">
-                    <h3 className="text-xl font-bold">
-                      {getChallengeTypeString(challenge.challengeType)}
-                    </h3>
-                    <Badge
-                      className="rounded-md px-2 py-1 text-xs"
-                      variant={getBadgeVariant(challenge.status)}
-                    >
-                      {getBadgeVariant(challenge.status)}
-                    </Badge>
-                  </div>
-                  <div className="mb-4">
-                    {!challenge.isTwoSided && (
-                      <p className="text-sm">
-                        <span className="font-semibold">Target:</span>{" "}
-                        {[4, 5, 6].includes(challenge.challengeType)
-                          ? `${challenge.challengeTarget.toString()}% Improvement`
-                          : challenge.challengeTarget.toString()}
-                      </p>
-                    )}
-                    <p className="text-sm">
-                      <span className="font-semibold">Amount:</span>{" "}
-                      {challenge.challengerAmount.toString()} USDC
-                    </p>
-                    <p className="text-sm">
-                      <span className="font-semibold">1v1:</span>{" "}
-                      {challenge.isTwoSided ? "Yes" : "No"}
-                    </p>
-                    <p className="flex items-center text-sm">
-                      <ClockIcon className="mr-1 inline-block h-4 w-4" />
-                      {formatTimeRemaining(challenge.endTime)}
-                    </p>
-                    <p className="text-sm">
-                      <span className="font-semibold">Challenger:</span>{" "}
-                      {challenge.challenger.slice(0, 6)}...
-                      {challenge.challenger.slice(-4)}
-                    </p>
-                  </div>
-                  {challenge.status == 1 &&
-                    formatTimeRemaining(challenge.endTime) == "Ended" && (
-                      <div className="flex justify-center space-x-2">
-                        <Button
-                          onClick={() => handleClaim(challenge)}
-                          variant="default"
-                          className="w-full bg-green-500 text-white transition-colors hover:bg-green-600"
-                          disabled={isPending || Pending1v1}
+      {acceptedChallenges?.length > 0 && (
+        <>
+          <CardHeader>
+            <CardTitle className="text-white">Active Challenges</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap justify-center gap-4 md:justify-start">
+              {acceptedChallenges.length > 0 &&
+                acceptedChallenges.map((challenge, index) => (
+                  <Card
+                    key={index}
+                    className="mb-4 w-[320px] rounded-lg border-none bg-white/10 p-6 text-white shadow-lg backdrop-blur-md transition-shadow duration-300 hover:shadow-lg"
+                  >
+                    <div className="flex h-full flex-col justify-between">
+                      <div className="mb-2 flex items-center justify-between">
+                        <h3 className="text-xl font-bold">
+                          {getChallengeTypeString(challenge.challengeType)}
+                        </h3>
+                        <Badge
+                          className="rounded-md px-2 py-1 text-xs"
+                          variant={getBadgeVariant(challenge.status)}
                         >
-                          {checkingResultId === challenge.challengeId
-                            ? "Updating..."
-                            : "Check Result"}
-                        </Button>
+                          {getBadgeVariant(challenge.status)}
+                        </Badge>
                       </div>
-                    )}
-                </div>
-              </Card>
-            ))
-          ) : (
-            <p className="text-white">No active challenges</p>
-          )}
-        </div>
-      </CardContent>
+                      <div className="mb-4">
+                        {!challenge.isTwoSided && (
+                          <p className="text-sm">
+                            <span className="font-semibold">Target:</span>{" "}
+                            {[4, 5, 6].includes(challenge.challengeType)
+                              ? `${challenge.challengeTarget.toString()}% Improvement`
+                              : challenge.challengeTarget.toString()}
+                          </p>
+                        )}
+                        <p className="text-sm">
+                          <span className="font-semibold">Amount:</span>{" "}
+                          {challenge.challengerAmount.toString()} USDC
+                        </p>
+                        <p className="text-sm">
+                          <span className="font-semibold">1v1:</span>{" "}
+                          {challenge.isTwoSided ? "Yes" : "No"}
+                        </p>
+                        <p className="flex items-center text-sm">
+                          <ClockIcon className="mr-1 inline-block h-4 w-4" />
+                          {formatTimeRemaining(challenge.endTime)}
+                        </p>
+                        <p className="text-sm">
+                          <span className="font-semibold">Challenger:</span>{" "}
+                          {challenge.challenger.slice(0, 6)}...
+                          {challenge.challenger.slice(-4)}
+                        </p>
+                      </div>
+                      {challenge.status == 1 &&
+                        formatTimeRemaining(challenge.endTime) == "Ended" && (
+                          <div className="flex justify-center space-x-2">
+                            <Button
+                              onClick={() => handleClaim(challenge)}
+                              variant="default"
+                              className="w-full bg-green-500 text-white transition-colors hover:bg-green-600"
+                              disabled={isPending || Pending1v1}
+                            >
+                              {checkingResultId === challenge.challengeId
+                                ? "Updating..."
+                                : "Check Result"}
+                            </Button>
+                          </div>
+                        )}
+                    </div>
+                  </Card>
+                ))}
+            </div>
+          </CardContent>
+        </>
+      )}
     </section>
   );
 };
