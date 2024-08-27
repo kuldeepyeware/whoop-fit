@@ -148,6 +148,21 @@ interface ProfileUserData {
   };
 }
 
+interface PublicProfileUserData {
+  smartAccountAddress: string | null;
+  id?: string | null;
+  whoopProfile: {
+    email: string;
+    firstName: string;
+    lastName: string;
+    userId?: string;
+  }[];
+  whoopCycles: ProfileDataCycle[];
+  whoopRecoveries: ProfileDataRecovery[];
+  whoopSleeps: ProfileDataSleep[];
+  challengeCompleted: number;
+}
+
 interface UserListData {
   privyId: string;
   smartAccountAddress: string | null;
@@ -169,4 +184,5 @@ export type {
   Sleep,
   ProfileUserData,
   UserListData,
+  PublicProfileUserData,
 };

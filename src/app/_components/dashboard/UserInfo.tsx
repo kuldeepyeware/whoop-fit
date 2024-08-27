@@ -19,7 +19,7 @@ import { useSmartAccount } from "@/hooks/smartAccountContext";
 import { useReadContract } from "wagmi";
 import { WhoopTokenAbi, WhoopTokenAddress } from "WhoopContract";
 import Link from "next/link";
-import renderMetricCard from "../challenge/MetricCard";
+import RenderMetricCard from "../challenge/MetricCard";
 
 const UserInfo = () => {
   const [isConnected, setIsConnected] = useState(false);
@@ -150,36 +150,38 @@ const UserInfo = () => {
                 </div>
                 <div className="grid gap-4">
                   <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                    {renderMetricCard(
-                      "Strain",
-                      whoopData?.metrics.strain.value,
-                      whoopData?.metrics.strain.change,
-                    )}
-                    {renderMetricCard(
-                      "Recovery Score",
-                      whoopData?.metrics.recoveryScore.value,
-                      whoopData?.metrics.recoveryScore.change,
-                    )}
-                    {renderMetricCard(
-                      "Sleep Efficiency",
-                      whoopData?.metrics.sleepEfficiency.value,
-                      whoopData?.metrics.sleepEfficiency.change,
-                    )}
-                    {renderMetricCard(
-                      "Calories",
-                      whoopData?.metrics.calories.value,
-                      whoopData?.metrics.calories.change,
-                    )}
-                    {renderMetricCard(
-                      "Heart Rate Variability",
-                      whoopData?.metrics.hrv.value,
-                      whoopData?.metrics.hrv.change,
-                    )}
-                    {renderMetricCard(
-                      "Resting Heart Rate",
-                      whoopData?.metrics.restingHeartRate.value,
-                      whoopData?.metrics.restingHeartRate.change,
-                    )}
+                    <RenderMetricCard
+                      title="Strain"
+                      value={whoopData?.metrics.strain.value}
+                      change={whoopData?.metrics.strain.change}
+                    />
+                    <RenderMetricCard
+                      title="Recovery Score"
+                      value={whoopData?.metrics.recoveryScore.value}
+                      change={whoopData?.metrics.recoveryScore.change}
+                      isPercentage={true}
+                    />
+                    <RenderMetricCard
+                      title="Sleep Efficiency"
+                      value={whoopData?.metrics.sleepEfficiency.value}
+                      change={whoopData?.metrics.sleepEfficiency.change}
+                      isPercentage={true}
+                    />
+                    <RenderMetricCard
+                      title="Calories"
+                      value={whoopData?.metrics.calories.value}
+                      change={whoopData?.metrics.calories.change}
+                    />
+                    <RenderMetricCard
+                      title="Heart Rate Variability"
+                      value={whoopData?.metrics.hrv.value}
+                      change={whoopData?.metrics.hrv.change}
+                    />
+                    <RenderMetricCard
+                      title="Resting Heart Rate"
+                      value={whoopData?.metrics.restingHeartRate.value}
+                      change={whoopData?.metrics.restingHeartRate.change}
+                    />
 
                     <Card className="border-none bg-white/10 p-4 text-white shadow-lg backdrop-blur-md">
                       <div className="text-3xl font-bold md:text-4xl">

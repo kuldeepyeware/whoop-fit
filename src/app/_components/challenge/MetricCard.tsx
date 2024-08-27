@@ -1,12 +1,24 @@
-import { Triangle } from "lucide-react";
+import { TrendingDown, TrendingUp } from "lucide-react";
 import { Card } from "../ui/card";
 
-const renderMetricCard = (
-  title: string,
-  value: number | undefined,
-  change: number | undefined,
-) => {
-  const formattedValue = value !== undefined ? Number(value).toFixed(1) : "N/A";
+const RenderMetricCard = ({
+  title,
+  value,
+  change,
+  isPercentage,
+}: {
+  title: string;
+  value: number | undefined;
+  change: number | undefined;
+  isPercentage?: boolean;
+}) => {
+  const formattedValue =
+    value !== undefined
+      ? isPercentage
+        ? `${Number(value).toFixed(1)}%`
+        : Number(value).toFixed(1)
+      : "N/A";
+
   const formattedChange =
     change !== undefined
       ? `${change > 0 ? "+" : ""}${change.toFixed(1)}%`
@@ -19,9 +31,9 @@ const renderMetricCard = (
         <span>
           {change !== undefined &&
             (change > 0 ? (
-              <Triangle className="h-4 w-4 fill-current text-green-500 md:h-6 md:w-6" />
+              <TrendingUp className="h-4 w-4 fill-current text-green-500 md:h-6 md:w-6" />
             ) : (
-              <Triangle className="h-4 w-4 rotate-180 fill-current text-red-500 md:h-6 md:w-6" />
+              <TrendingDown className="h-4 w-4 fill-current text-red-500 md:h-6 md:w-6" />
             ))}
         </span>
       </div>
@@ -38,4 +50,4 @@ const renderMetricCard = (
   );
 };
 
-export default renderMetricCard;
+export default RenderMetricCard;

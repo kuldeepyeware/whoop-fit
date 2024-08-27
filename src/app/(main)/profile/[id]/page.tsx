@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { api } from "@/trpc/react";
 import { Button } from "@/app/_components/ui/button";
 import { Swords, CircleDollarSign, UserCircle, LockIcon } from "lucide-react";
-import type { ProfileUserData } from "@/schemas/types/whoopDataTypes";
+import type { PublicProfileUserData } from "@/schemas/types/whoopDataTypes";
 import {
   Card,
   CardContent,
@@ -172,7 +172,9 @@ type FormValues = z.infer<typeof formSchema>;
 
 const ProfilePage = ({ params }: { params: { id: string } }) => {
   const id = params.id;
-  const [profileData, setProfileData] = useState<ProfileUserData | null>(null);
+  const [profileData, setProfileData] = useState<PublicProfileUserData | null>(
+    null,
+  );
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [averageMetric, setAverageMetric] = useState(0);
   const [challengeLink, setChallengeLink] = useState<string | null>(null);
@@ -454,7 +456,7 @@ const ProfilePage = ({ params }: { params: { id: string } }) => {
 
   useEffect(() => {
     if (userData) {
-      setProfileData(userData as unknown as ProfileUserData);
+      setProfileData(userData as unknown as PublicProfileUserData);
     }
   }, [userData]);
 
