@@ -26,10 +26,14 @@ export const GET = async (req: NextRequest) => {
         },
       },
     });
+
+    const results = [];
+
     for (const user of users) {
       try {
         const { access_token, refresh_token, expires_in } =
           await refreshWhoopToken(user.whoopRefreshToken!);
+
         await db.user.update({
           where: { privyId: user.privyId },
           data: {
@@ -38,12 +42,14 @@ export const GET = async (req: NextRequest) => {
             whoopTokenExpiry: new Date(Date.now() + expires_in * 1000),
           },
         });
+
         const [workouts, recoveries, sleep, cycles] = await Promise.all([
           fetchWhoopWorkouts(access_token),
           fetchWhoopRecoveries(access_token),
           fetchWhoopSleep(access_token),
           fetchWhoopCycles(access_token),
         ]);
+
         await Promise.all([
           db.cycle.deleteMany({
             where: { userId: user.whoopUserId! },
@@ -58,6 +64,7 @@ export const GET = async (req: NextRequest) => {
             where: { userId: user.whoopUserId! },
           }),
         ]);
+
         await Promise.all([
           db.cycle.createMany({
             data: cycles.map((cycle) => ({
@@ -75,7 +82,6 @@ export const GET = async (req: NextRequest) => {
               maxHeartRate: cycle.score.max_heart_rate,
             })),
           }),
-
           db.sleep.createMany({
             data: sleep.map((sleepRecord) => ({
               sleepId: String(sleepRecord.id),
@@ -126,7 +132,6 @@ export const GET = async (req: NextRequest) => {
                 sleepRecord.score?.sleep_efficiency_percentage || 0,
             })),
           }),
-
           db.recovery.createMany({
             data: recoveries.map((recovery) => ({
               userId: String(recovery.user_id),
@@ -171,22 +176,28 @@ export const GET = async (req: NextRequest) => {
             })),
           }),
         ]);
+
+        results.push({ userId: user.privyId, success: true });
       } catch (error) {
-        console.error("Error in refresh WHOOP data:", error);
-        return NextResponse.json(
-          { success: false, error: (error as Error).message },
-          { status: 500 },
-        );
+        console.error(`Error processing user ${user.privyId}:`, error);
+        results.push({
+          userId: user.privyId,
+          success: false,
+          error: (error as Error).message,
+        });
       }
-      await db.cron.create({
-        data: {
-          name: "Pass",
-        },
-      });
-      return NextResponse.json({ success: true });
     }
+
+    await db.cron.create({
+      data: {
+        name: "Completed",
+      },
+    });
+
+    return NextResponse.json({ success: true, results });
   } catch (error) {
     console.error("Error in refresh WHOOP data:", error);
+
     await db.cron.create({
       data: {
         name: "Error",
