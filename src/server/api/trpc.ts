@@ -28,7 +28,7 @@ export const createTRPCContext = async ({
         const authTokenClaims = await privy.verifyAuthToken(authToken);
         userId = authTokenClaims.userId;
       } catch (err) {
-        console.log(err);
+        console.error(err);
       }
     }
   }

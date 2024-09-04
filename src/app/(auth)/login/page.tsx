@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
+
 "use client";
 import { useState, useEffect } from "react";
 import { useLogin, usePrivy } from "@privy-io/react-auth";
@@ -68,10 +69,10 @@ const Login = () => {
       <Card className="m-4 flex flex-col items-center justify-center border-none bg-white/10 shadow-lg backdrop-blur-md">
         <CardHeader>
           <Image
-            src={"https://i.ibb.co/d77PV1y/Logo.png"}
+            src={"https://ucarecdn.com/afb63616-d1c5-4eaa-b8e4-f5b64be90ed9/"}
             alt="Fitcentive Logo"
-            width={500}
-            height={500}
+            width={250}
+            height={250}
             className="h-full w-full rounded-full"
           />
           {/* <Label className="text-xl text-white">Log in to get started </Label> */}

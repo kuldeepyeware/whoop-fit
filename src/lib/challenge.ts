@@ -1,3 +1,5 @@
+import { Activity, BatteryCharging, Moon } from "lucide-react";
+
 enum ChallengeStatus {
   Pending = 0,
   Accepted = 1,
@@ -15,7 +17,6 @@ type BadgeVariant =
   | "default";
 
 const getChallengeTypeString = (type: number) => {
-  // const types = ["HRV", "Steps", "Sleep Score", "Workout Minutes"];
   const types = [
     "Calories",
     "Strain",
@@ -146,6 +147,48 @@ const calculateImprovementTrend = <T extends object>(
   return validComparisons > 0 ? (totalChange / validComparisons) * 100 : 0;
 };
 
+const getUnitForChallengeType = (challengeType: number) => {
+  switch (challengeType) {
+    case 0:
+      return "kcal";
+    case 1:
+      return "";
+    case 2:
+      return "hrs";
+    case 3:
+      return "%";
+    case 4:
+      return "%";
+    case 5:
+      return "%";
+    case 6:
+      return "";
+    default:
+      return "";
+  }
+};
+
+const getChallengeTypeIcon = (challengeType: number) => {
+  switch (challengeType) {
+    case 0:
+      return Activity;
+    case 1:
+      return Activity;
+    case 2:
+      return Moon;
+    case 3:
+      return BatteryCharging;
+    case 4:
+      return Activity;
+    case 5:
+      return Moon;
+    case 6:
+      return Activity;
+    default:
+      return Activity;
+  }
+};
+
 export {
   getBadgeVariant,
   formatTimeRemaining,
@@ -154,4 +197,6 @@ export {
   getTomorrowDate,
   holisticTypes,
   calculateImprovementTrend,
+  getUnitForChallengeType,
+  getChallengeTypeIcon,
 };

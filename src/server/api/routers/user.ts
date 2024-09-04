@@ -1,4 +1,8 @@
-import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  publicProcedure,
+} from "@/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import * as z from "zod";
 import { env } from "@/env";
@@ -6,6 +10,7 @@ import { ethers } from "ethers";
 import { WhoopTokenAbi, WhoopTokenAddress } from "WhoopContract";
 import {
   calculateImprovementTrend,
+  getChallengeTypeString,
   getStartDateForLast7Days,
 } from "@/lib/challenge";
 import {
@@ -14,6 +19,7 @@ import {
   getAverageSleepHours,
   getAverageStrain,
 } from "@/data/user";
+import { MailerSend, EmailParams, Sender, Recipient } from "mailersend";
 
 type WhoopSleep = {
   end: Date;
@@ -37,6 +43,10 @@ type WhoopCycle = {
   strain: number;
   kilojoule: number;
 };
+
+const mailerSend = new MailerSend({
+  apiKey: env.MAILER_API_KEY,
+});
 
 export const userRouter = createTRPCRouter({
   checkRegistration: protectedProcedure
@@ -88,6 +98,30 @@ export const userRouter = createTRPCRouter({
 
       return { success: true, user: newUser };
     }),
+
+  updateProfileImage: protectedProcedure
+    .input(z.object({ imageUrl: z.string().url() }))
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.privyUserId;
+
+      await ctx.db.user.update({
+        where: { privyId: userId },
+        data: { image: input.imageUrl },
+      });
+
+      return { success: true };
+    }),
+
+  getTotalWhoopSignedUp: publicProcedure.query(async ({ ctx }) => {
+    const users = await ctx.db.user.count({
+      where: {
+        whoopUserId: {
+          not: null,
+        },
+      },
+    });
+    return { users };
+  }),
 
   getUsersWithMetrics: protectedProcedure
     .input(
@@ -443,10 +477,8 @@ export const userRouter = createTRPCRouter({
             challengeId,
             targetReached,
           );
-
           // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
           await tx.wait();
-
           await ctx.db.user.update({
             where: { privyId: ctx?.privyUserId },
             data: {
@@ -799,5 +831,108 @@ export const userRouter = createTRPCRouter({
       }
 
       return { average: averageValue };
+    }),
+
+  sendNewChallengeEmail: protectedProcedure
+    .input(
+      z.object({
+        senderSmartAccountAddress: z.string(),
+        receiverSmartAccountAddress: z.string(),
+        challengeType: z.number(),
+        amount: z.string(),
+        isTwoSided: z.boolean(),
+        latestChallengeId: z.number(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const senderEmailAddress = await ctx.db.user.findUnique({
+          where: { smartAccountAddress: input.senderSmartAccountAddress },
+          select: {
+            whoopProfile: {
+              select: {
+                email: true,
+                firstName: true,
+                lastName: true,
+              },
+            },
+            email: true,
+          },
+        });
+
+        const senderEmail = senderEmailAddress?.whoopProfile[0]?.email
+          ? senderEmailAddress?.whoopProfile[0]?.email
+          : senderEmailAddress?.email;
+
+        const senderName = senderEmailAddress?.whoopProfile[0]?.firstName
+          ? `${senderEmailAddress?.whoopProfile[0]?.firstName} ${senderEmailAddress?.whoopProfile[0]?.lastName}`
+          : senderEmailAddress?.email;
+
+        if (!senderEmailAddress || !senderEmail) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "User data not found",
+          });
+        }
+
+        const receiverEmailAddress = await ctx.db.user.findUnique({
+          where: { smartAccountAddress: input.receiverSmartAccountAddress },
+          select: {
+            whoopProfile: {
+              select: {
+                email: true,
+              },
+            },
+          },
+        });
+
+        const receiverEmail = receiverEmailAddress?.whoopProfile[0]?.email;
+
+        if (!receiverEmailAddress || !receiverEmail) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "User data not found",
+          });
+        }
+
+        const challengeType = getChallengeTypeString(input.challengeType);
+
+        const isTwoSidedChallenge = input.isTwoSided ? "challenge" : "sponsor";
+
+        const sentFrom = new Sender(
+          "fitcentive@trial-z3m5jgrrzjmgdpyo.mlsender.net",
+          "fitcentive",
+        );
+
+        const recipients = [new Recipient(receiverEmail)];
+
+        const personalization = [
+          {
+            email: receiverEmail,
+            data: {
+              name: senderName,
+              amount: `${input.amount} USDC`,
+              isTwoSided: isTwoSidedChallenge,
+              challengeId: input.latestChallengeId,
+            },
+          },
+        ];
+
+        const emailParams = new EmailParams()
+          .setFrom(sentFrom)
+          .setTo(recipients)
+          .setReplyTo(sentFrom)
+          .setSubject(`${senderName} sent you a ${challengeType} Challenge`)
+          .setTemplateId("3yxj6ljw71xgdo2r")
+          .setPersonalization(personalization);
+
+        await mailerSend.email.send(emailParams);
+      } catch (error) {
+        console.error("Failed To Send Email", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed To Send Email",
+        });
+      }
     }),
 });

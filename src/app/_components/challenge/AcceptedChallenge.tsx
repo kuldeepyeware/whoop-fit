@@ -22,6 +22,9 @@ import { ClockIcon } from "lucide-react";
 import { api } from "@/trpc/react";
 import { useToast } from "../ui/use-toast";
 import ChallengeCardSkeleton from "../skeleton/ChallengeCardSkeleton";
+import Link from "next/link";
+import { getParticipantNameByAddress } from "@/lib/participant";
+import useParticipantsCache from "@/hooks/usersName";
 
 type AcceptedChallengeProps = {
   acceptedChallengesData: any;
@@ -42,6 +45,7 @@ const AcceptedChallenge: React.FC<AcceptedChallengeProps> = ({
   const [checkingResultId, setCheckingResultId] = useState<bigint | null>(null);
 
   const { toast } = useToast();
+  const participants = useParticipantsCache();
 
   const { mutateAsync: updateTargetMutation, isPending } =
     api.user.updateTargetStatus.useMutation({
@@ -125,7 +129,7 @@ const AcceptedChallenge: React.FC<AcceptedChallengeProps> = ({
                 acceptedChallenges.map((challenge, index) => (
                   <Card
                     key={index}
-                    className="mb-4 w-[320px] rounded-lg border-none bg-white/10 p-6 text-white shadow-lg backdrop-blur-md transition-shadow duration-300 hover:shadow-lg"
+                    className="mb-4 w-[310px] rounded-lg border-none bg-white/10 p-6 text-white shadow-lg backdrop-blur-md transition-shadow duration-300 hover:shadow-lg"
                   >
                     <div className="flex h-full flex-col justify-between">
                       <div className="mb-2 flex items-center justify-between">
@@ -162,8 +166,10 @@ const AcceptedChallenge: React.FC<AcceptedChallengeProps> = ({
                         </p>
                         <p className="text-sm">
                           <span className="font-semibold">Challenger:</span>{" "}
-                          {challenge.challenger.slice(0, 6)}...
-                          {challenge.challenger.slice(-4)}
+                          {getParticipantNameByAddress(
+                            participants,
+                            challenge.challenger,
+                          )}
                         </p>
                       </div>
                       {challenge.status == 1 &&
@@ -181,6 +187,14 @@ const AcceptedChallenge: React.FC<AcceptedChallengeProps> = ({
                             </Button>
                           </div>
                         )}
+                      <div className="mt-3 flex justify-center space-x-2">
+                        <Link
+                          href={`/challenge/${challenge.challengeId}`}
+                          className="w-full rounded-md bg-white p-2 text-center font-medium text-black transition-colors hover:bg-white/80"
+                        >
+                          View Challenge
+                        </Link>
+                      </div>
                     </div>
                   </Card>
                 ))}

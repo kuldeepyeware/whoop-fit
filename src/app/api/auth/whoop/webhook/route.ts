@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
         await handleRecoveryUpdate(user_id, id, type);
         break;
       default:
-        console.log(`Unhandled webhook type: ${type}`);
+        console.error(`Unhandled webhook type: ${type}`);
     }
 
     await db.webhook.create({

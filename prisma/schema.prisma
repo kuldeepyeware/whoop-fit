@@ -13,6 +13,7 @@ model User {
 
   name                String?
   email               String? @unique
+  image               String?
   privyId             String  @unique
   embeddedAddress     String? @unique
   smartAccountAddress String? @unique

@@ -81,8 +81,8 @@ import {
 } from "@/lib/challenge";
 import { Label } from "@/app/_components/ui/label";
 import { useReadContract } from "wagmi";
-import ChallengeLink from "@/app/_components/common/ChallengeLink";
 import { env } from "@/env";
+import ChallengeLink from "@/app/_components/common/ChallengeLink";
 
 const formSchema = z
   .object({
@@ -253,6 +253,8 @@ const Users = () => {
     },
   );
 
+  const sendChallengeEmail = api.user.sendNewChallengeEmail.useMutation();
+
   const { data: challengeCounterData, refetch: refetchChallengeCounter } =
     useReadContract({
       address: WhoopTokenAddress,
@@ -406,17 +408,32 @@ const Users = () => {
         to: WhoopTokenAddress,
         data: createChallengecallData,
       });
+
+      const latestChallengeId = Number(challengeCounterData);
+
+      await sendChallengeEmail.mutateAsync({
+        senderSmartAccountAddress: smartAccountAddress,
+        receiverSmartAccountAddress: selectedUser?.smartAccountAddress,
+        challengeType: challengeType,
+        amount: values.amount,
+        isTwoSided: values.isTwoSided,
+        latestChallengeId,
+      });
+
       await refetchChallengeCounter();
+
       if (challengeCounterData) {
-        const latestChallengeId = Number(challengeCounterData);
         const newChallengeLink = `${env.NEXT_PUBLIC_DOMAIN_URL}pendingChallenge/${latestChallengeId}`;
         setChallengeLink(newChallengeLink);
       }
+
       toast({
         title: "Created Challenge successfully!",
         description: "Click the 'Copy Challenge Link' button to share.",
       });
+
       setIsPending(false);
+
       form.reset();
     } catch (error) {
       console.error("Error sending transaction:", error);

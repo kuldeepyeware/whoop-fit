@@ -117,6 +117,7 @@ interface ProfileDataCycle {
 interface ProfileDataSleep {
   sleepEfficiencyPercentage: string;
 }
+
 interface ProfileDataRecovery {
   recoveryScore: string;
   hrvRmssd: string;
@@ -146,6 +147,7 @@ interface ProfileUserData {
     hrv: MetricData;
     restingHeartRate: MetricData;
   };
+  image: string | null;
 }
 
 interface PublicProfileUserData {
@@ -175,6 +177,104 @@ interface UserListData {
   whoopSleeps: ProfileDataSleep[];
 }
 
+type WhoopCycle = {
+  id: string;
+  userId: string;
+  cycleId: string;
+  createdAtByWhoop: Date;
+  updatedAtByWhoop: Date;
+  start: Date;
+  end: Date | null;
+  timezoneOffset: string;
+  scoreState: string;
+  strain: number;
+  kilojoule: number;
+  averageHeartRate: number;
+  maxHeartRate: number;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+type WhoopSleep = {
+  id: string;
+  userId: string;
+  sleepId: string;
+  createdAtByWhoop: Date;
+  updatedAtByWhoop: Date;
+  start: Date;
+  end: Date;
+  timezoneOffset: string;
+  nap: boolean;
+  scoreState: string;
+  totalInBedTimeMilli: number;
+  totalAwakeTimeMilli: number;
+  totalNoDataTimeMilli: number;
+  totalLightSleepTimeMilli: number;
+  totalSlowWaveSleepTimeMilli: number;
+  totalRemSleepTimeMilli: number;
+  sleepCycleCount: number;
+  disturbanceCount: number;
+  baseline_milli_sleep_needed: number;
+  need_from_sleep_debt_milli: number;
+  need_from_recent_strain_milli: number;
+  need_from_recent_nap_milli: number;
+  respiratoryRate: number | null;
+  sleepPerformancePercentage: number | null;
+  sleepConsistencyPercentage: number | null;
+  sleepEfficiencyPercentage: number | null;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+type WhoopRecovery = {
+  id: string;
+  userId: string;
+  cycleId: string;
+  sleepId: string;
+  createdAtByWhoop: Date;
+  updatedAtByWhoop: Date;
+  scoreState: string;
+  userCalibrating: boolean;
+  recoveryScore: number;
+  restingHeartRate: number;
+  hrvRmssd: number;
+  spo2Percentage: number | null;
+  skinTempCelsius: number | null;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+type WhoopData = {
+  whoopCycles: WhoopCycle[];
+  whoopSleeps: WhoopSleep[];
+  whoopRecoveries: WhoopRecovery[];
+};
+
+type ChallengeValue =
+  | number
+  | {
+      calories?: number;
+      strain?: number;
+      sleep?: number;
+      recovery?: number;
+      sleepPerformance?: number;
+      sleepEfficiency?: number;
+      sleepConsistency?: number;
+    };
+
+type ChallengeData = {
+  currentValue: ChallengeValue;
+  lastMonthValue: ChallengeValue;
+};
+
+interface Participant {
+  smartAccountAddress: string | null;
+  whoopProfile: {
+    firstName: string;
+    lastName: string;
+  }[];
+}
+
 export type {
   Cycle,
   BodyMeasurement,
@@ -185,4 +285,7 @@ export type {
   ProfileUserData,
   UserListData,
   PublicProfileUserData,
+  WhoopData,
+  ChallengeData,
+  Participant,
 };

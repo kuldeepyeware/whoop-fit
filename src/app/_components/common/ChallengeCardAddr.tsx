@@ -18,6 +18,8 @@ import { useSmartAccount } from "@/hooks/smartAccountContext";
 import { encodeFunctionData } from "viem";
 import { useState } from "react";
 import { Button } from "../ui/button";
+import useParticipantsCache from "@/hooks/usersName";
+import { getParticipantNameByAddress } from "@/lib/participant";
 
 type ChallengeCardProps = {
   challenge: Challenge;
@@ -34,6 +36,8 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
 
   const { smartAccountAddress, smartAccountReady, sendUserOperation } =
     useSmartAccount();
+
+  const participants = useParticipantsCache();
 
   const { toast } = useToast();
 
@@ -91,7 +95,7 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
   };
 
   return (
-    <Card className="mb-4 w-[320px] rounded-lg border-none bg-white/10 p-6 text-white shadow-lg backdrop-blur-md transition-shadow duration-300 hover:shadow-lg">
+    <Card className="mb-4 w-[310px] rounded-lg border-none bg-white/10 p-6 text-white shadow-lg backdrop-blur-md transition-shadow duration-300 hover:shadow-lg">
       <div className="flex h-full flex-col justify-between">
         <div className="mb-2 flex items-center justify-between">
           <h3 className="text-xl font-bold">
@@ -134,23 +138,28 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
 
           <p className="text-sm">
             <span className="font-semibold">Challenger:</span>{" "}
-            {challenge.challenger.slice(0, 6)}...
-            {challenge.challenger.slice(-4)}
+            {getParticipantNameByAddress(participants, challenge.challenger)}
           </p>
 
           <p className="text-sm">
             <span className="font-semibold">Challenged:</span>{" "}
-            {challenge.challenged.slice(0, 6)}...
-            {challenge.challenged.slice(-4)}
+            {getParticipantNameByAddress(participants, challenge.challenged)}
           </p>
 
           {formatTimeRemaining(challenge.endTime) == "Ended" &&
             winnerAddress != 0x0000000000000000000000000000000000000000 && (
               <p className="text-sm">
                 <span className="font-semibold">Winner:</span>{" "}
-                {winnerAddress
-                  ? `${(winnerAddress as string).slice(0, 6)}...${(winnerAddress as string).slice(-4)}`
-                  : "N/A"}
+                {winnerAddress ? (
+                  <>
+                    {getParticipantNameByAddress(
+                      participants,
+                      winnerAddress as string,
+                    )}
+                  </>
+                ) : (
+                  "N/A"
+                )}
               </p>
             )}
         </div>

@@ -7,10 +7,11 @@ import {
   CopyCheck,
   CopyCheckIcon,
   ShareIcon,
+  Upload,
   UserCircle,
 } from "lucide-react";
 import { api } from "@/trpc/react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, type ChangeEvent } from "react";
 import ProfileSkeleton from "../skeleton/ProfileSkeleton";
 import { useAuth } from "@/hooks/authHook";
 import type { ProfileUserData } from "@/schemas/types/whoopDataTypes";
@@ -20,14 +21,24 @@ import { useReadContract } from "wagmi";
 import { WhoopTokenAbi, WhoopTokenAddress } from "WhoopContract";
 import Link from "next/link";
 import RenderMetricCard from "../challenge/MetricCard";
+import Image from "next/image";
+import { UploadClient } from "@uploadcare/upload-client";
+import { useToast } from "../ui/use-toast";
+import { Skeleton } from "../ui/skeleton";
+
+const uploadClient = new UploadClient({
+  publicKey: env.NEXT_PUBLIC_UPLOADCARE,
+});
 
 const UserInfo = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [whoopData, setWhoopData] = useState<ProfileUserData | null>(null);
   const [copied, setCopied] = useState(false);
   const [copiedProfile, setCopiedProfile] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   const { authenticated } = useAuth();
+  const { toast } = useToast();
 
   const { smartAccountAddress, smartAccountReady } = useSmartAccount();
 
@@ -47,6 +58,8 @@ const UserInfo = () => {
     enabled: isConnected && authenticated,
   });
 
+  const updateProfileImage = api.user.updateProfileImage.useMutation();
+
   const handleCopy = async (smartAccountAddress: string) => {
     try {
       await navigator.clipboard.writeText(smartAccountAddress);
@@ -65,6 +78,42 @@ const UserInfo = () => {
       setTimeout(() => setCopiedProfile(false), 2000);
     } catch (err) {
       console.error("Failed to copy:", err);
+    }
+  };
+
+  const handleImageUpload = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event?.target?.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+      const result = await uploadClient.uploadFile(file);
+      const cdnUrl = result.cdnUrl;
+
+      await updateProfileImage.mutateAsync({ imageUrl: cdnUrl! });
+
+      setWhoopData((prevData) => {
+        if (!prevData) return null;
+
+        return {
+          ...prevData,
+          image: cdnUrl,
+          smartAccountAddress: prevData.smartAccountAddress ?? null,
+          id: prevData.id ?? null,
+        };
+      });
+
+      toast({
+        title: "Uploaded Image Successfully!",
+      });
+    } catch (error) {
+      toast({
+        title: "Failed To Upload Image!",
+        variant: "destructive",
+      });
+      console.error("Failed to upload image:", error);
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -118,8 +167,39 @@ const UserInfo = () => {
               <>
                 <div className="flex flex-col items-center gap-4">
                   <div className="flex h-full flex-col items-center justify-center space-y-1 text-center">
-                    <div>
-                      <UserCircle className="h-20 w-20" strokeWidth={1} />
+                    <div className="relative">
+                      {isUploading ? (
+                        <Skeleton className="h-20 w-20 rounded-full" />
+                      ) : (
+                        <>
+                          {whoopData?.image ? (
+                            <Image
+                              src={whoopData?.image}
+                              alt="Profile Image"
+                              width={100}
+                              height={100}
+                              className="rounded-full"
+                            />
+                          ) : (
+                            <UserCircle className="h-20 w-20" strokeWidth={1} />
+                          )}
+
+                          <label
+                            htmlFor="image-upload"
+                            className="absolute -right-9 top-0 cursor-pointer"
+                          >
+                            <Upload className="h-6 w-6" strokeWidth={1} />
+                            <input
+                              id="image-upload"
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={handleImageUpload}
+                              disabled={isUploading}
+                            />
+                          </label>
+                        </>
+                      )}
                     </div>
                     <div className="space-x-1 font-bold">
                       <span>{whoopData?.whoopProfile[0]?.firstName}</span>

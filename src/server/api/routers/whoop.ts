@@ -18,6 +18,7 @@ import {
   fetchWhoopBodyMeasurement,
 } from "@/data/whoop";
 import { db } from "@/server/db";
+import { calculateImprovementTrend } from "@/lib/challenge";
 
 export const whoopRouter = createTRPCRouter({
   getAuthUrl: protectedProcedure.mutation(({ ctx }) => {
@@ -344,6 +345,7 @@ export const whoopRouter = createTRPCRouter({
           orderBy: { createdAtByWhoop: "desc" },
           select: { sleepEfficiencyPercentage: true, createdAtByWhoop: true },
         },
+        image: true,
       },
     });
 
@@ -423,6 +425,338 @@ export const whoopRouter = createTRPCRouter({
         sleepEfficiency: getLatestAndChange(sleepEfficiency),
       },
     };
+  }),
+
+  getChallengeWhoopData: protectedProcedure
+    .input(
+      z.object({
+        // challengeId: z.string(),
+        challenger: z.string(),
+        challenged: z.string(),
+        // tokenAddress: z.string(),
+        // challengerAmount: z.string(),
+        startTime: z.string(),
+        endTime: z.string(),
+        // status: z.number(),
+        challengeType: z.number(),
+        // challengeTarget: z.string(),
+        isTwoSided: z.boolean(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const {
+        challenger,
+        challenged,
+        startTime,
+        endTime,
+        challengeType,
+        isTwoSided,
+      } = input;
+
+      const challengeStartTime = new Date(Number(startTime) * 1000);
+      const challengeEndTime = new Date(Number(endTime) * 1000);
+
+      const fetchUserData = async (address: string) => {
+        return await ctx.db.user.findUnique({
+          where: { smartAccountAddress: address },
+          select: {
+            whoopCycles: true,
+            whoopRecoveries: true,
+            whoopSleeps: true,
+          },
+        });
+      };
+
+      const challengedData = await fetchUserData(challenged);
+
+      if (!challengedData) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Challenged user not found",
+        });
+      }
+
+      let challengerData = null;
+
+      if (isTwoSided) {
+        challengerData = await fetchUserData(challenger);
+        if (!challengerData) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Challenger user not found",
+          });
+        }
+      }
+
+      const isWithinChallengePeriod = (date: Date) => {
+        return date >= challengeStartTime && date <= challengeEndTime;
+      };
+
+      const challengeDurationDays =
+        (challengeEndTime.getTime() - challengeStartTime.getTime()) /
+        (1000 * 60 * 60 * 24);
+
+      const calculateAverage = (userData: typeof challengerData) => {
+        if (!userData) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "User data not found",
+          });
+        }
+
+        switch (challengeType) {
+          case 0: // Calories
+            const totalCalories = userData?.whoopCycles
+              .filter(
+                (cycle) =>
+                  (cycle.end === null ||
+                    isWithinChallengePeriod(new Date(cycle.end))) &&
+                  cycle.scoreState === "SCORED",
+              )
+              .reduce((sum, cycle) => sum + cycle.kilojoule * 0.239006, 0); // Convert kJ to kcal
+
+            return { overallAverage: totalCalories / challengeDurationDays };
+
+          case 1: // Strain
+            const totalStrain = userData?.whoopCycles
+              .filter(
+                (cycle) =>
+                  (cycle.end === null ||
+                    isWithinChallengePeriod(new Date(cycle.end))) &&
+                  cycle.scoreState === "SCORED",
+              )
+              .reduce((sum, cycle) => sum + cycle.strain, 0);
+
+            return { overallAverage: totalStrain / challengeDurationDays };
+
+          case 2: // Hours of Sleep
+            const totalSleepHours = userData?.whoopSleeps
+              .filter(
+                (sleep) =>
+                  isWithinChallengePeriod(new Date(sleep.end)) &&
+                  sleep.scoreState === "SCORED" &&
+                  !sleep.nap,
+              )
+              .reduce(
+                (sum, sleep) => sum + sleep.totalInBedTimeMilli / 3600000,
+                0,
+              ); // Convert ms to hours
+
+            return { overallAverage: totalSleepHours / challengeDurationDays };
+
+          case 3: // Recovery
+            const totalRecovery = userData?.whoopRecoveries
+              .filter(
+                (recovery) =>
+                  isWithinChallengePeriod(
+                    new Date(recovery.updatedAtByWhoop),
+                  ) &&
+                  recovery.scoreState === "SCORED" &&
+                  !recovery.userCalibrating,
+              )
+              .reduce((sum, recovery) => sum + recovery.recoveryScore, 0);
+
+            return { overallAverage: totalRecovery / challengeDurationDays };
+
+          case 4: // All-Around Avenger
+            const sleepPerformanceImprovement = calculateImprovementTrend(
+              userData.whoopSleeps.filter(
+                (sleep) =>
+                  isWithinChallengePeriod(sleep.end) &&
+                  sleep.scoreState === "SCORED" &&
+                  !sleep.nap,
+              ),
+              (sleep) => sleep.sleepPerformancePercentage ?? 0,
+              (sleep) => sleep.end,
+            );
+
+            const recoveryImprovement = calculateImprovementTrend(
+              userData.whoopRecoveries.filter(
+                (recovery) =>
+                  isWithinChallengePeriod(recovery.updatedAtByWhoop) &&
+                  recovery.scoreState === "SCORED" &&
+                  !recovery.userCalibrating,
+              ),
+              (recovery) => recovery.recoveryScore,
+              (recovery) => recovery.updatedAtByWhoop,
+            );
+
+            const strainImprovement = calculateImprovementTrend(
+              userData.whoopCycles.filter(
+                (cycle) =>
+                  cycle.end !== null &&
+                  isWithinChallengePeriod(cycle.end) &&
+                  cycle.scoreState === "SCORED",
+              ),
+              (cycle) => cycle.strain,
+              (cycle) => cycle.end!,
+            );
+
+            const caloriesImprovement = calculateImprovementTrend(
+              userData.whoopCycles.filter(
+                (cycle) =>
+                  cycle.end !== null &&
+                  isWithinChallengePeriod(cycle.end) &&
+                  cycle.scoreState === "SCORED",
+              ),
+              (cycle) => cycle.kilojoule * 0.239006,
+              (cycle) => cycle.end!,
+            );
+
+            return {
+              overallAverage:
+                (sleepPerformanceImprovement +
+                  recoveryImprovement +
+                  strainImprovement +
+                  caloriesImprovement) /
+                4,
+              sleepPerformanceImprovement,
+              recoveryImprovement,
+              strainImprovement,
+              caloriesImprovement,
+            };
+
+          case 5: // Sleep Sage
+            const sleepPerformanceData = userData.whoopSleeps.filter(
+              (sleep) =>
+                isWithinChallengePeriod(sleep.end) &&
+                sleep.scoreState === "SCORED" &&
+                !sleep.nap,
+            );
+
+            const sleepPerformanceImprovementSage = calculateImprovementTrend(
+              sleepPerformanceData,
+              (sleep) => sleep.sleepPerformancePercentage ?? 0,
+              (sleep) => sleep.end,
+            );
+
+            const sleepConsistencyImprovement = calculateImprovementTrend(
+              sleepPerformanceData,
+              (sleep) => sleep.sleepConsistencyPercentage ?? 0,
+              (sleep) => sleep.end,
+            );
+
+            const sleepEfficiencyImprovement = calculateImprovementTrend(
+              sleepPerformanceData,
+              (sleep) => sleep.sleepEfficiencyPercentage ?? 0,
+              (sleep) => sleep.end,
+            );
+
+            return {
+              overallAverage:
+                (sleepPerformanceImprovementSage +
+                  sleepConsistencyImprovement +
+                  sleepEfficiencyImprovement) /
+                3,
+              sleepPerformanceImprovementSage,
+              sleepConsistencyImprovement,
+              sleepEfficiencyImprovement,
+            };
+
+          case 6: // Workout Wizard
+            const workoutData = userData.whoopCycles.filter(
+              (cycle) =>
+                cycle.end !== null &&
+                isWithinChallengePeriod(cycle.end) &&
+                cycle.scoreState === "SCORED",
+            );
+
+            const strainImprovementWizard = calculateImprovementTrend(
+              workoutData,
+              (cycle) => cycle.strain,
+              (cycle) => cycle.end!,
+            );
+
+            const caloriesImprovementWizard = calculateImprovementTrend(
+              workoutData,
+              (cycle) => cycle.kilojoule * 0.239006,
+              (cycle) => cycle.end!,
+            );
+
+            return {
+              overallAverage:
+                (strainImprovementWizard + caloriesImprovementWizard) / 2,
+              strainImprovementWizard,
+              caloriesImprovementWizard,
+            };
+
+          default:
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: "Invalid challenge type",
+            });
+        }
+      };
+
+      const challengedAverage = calculateAverage(challengedData);
+
+      if (isTwoSided && challengerData) {
+        const challengerAverage = calculateAverage(challengerData);
+        return {
+          challenger: challengerAverage,
+          challenged: challengedAverage,
+        };
+      } else {
+        return challengedAverage;
+      }
+    }),
+
+  getParticipantsName: protectedProcedure
+    .input(
+      z.object({
+        challengerAddress: z.string(),
+        challengedAddress: z.string(),
+      }),
+    )
+    .query(async ({ input, ctx }) => {
+      const { challengerAddress, challengedAddress } = input;
+
+      const fetchUserData = async (address: string) => {
+        const user = await ctx.db.user.findUnique({
+          where: { smartAccountAddress: address },
+          include: { whoopProfile: true },
+        });
+
+        if (!user || !user.whoopProfile || user.whoopProfile.length === 0) {
+          return {
+            firstName: "NA",
+            lastName: "NA",
+          };
+        }
+
+        return {
+          firstName: user?.whoopProfile[0]?.firstName,
+          lastName: user?.whoopProfile[0]?.lastName,
+        };
+      };
+
+      const challengerData = await fetchUserData(challengerAddress);
+      const challengedData = await fetchUserData(challengedAddress);
+
+      return {
+        challenger: challengerData,
+        challenged: challengedData,
+      };
+    }),
+
+  getAllParticipantsName: protectedProcedure.query(async ({ ctx }) => {
+    const users = await ctx.db.user.findMany({
+      where: {
+        whoopAccessToken: { not: null },
+        smartAccountAddress: { not: null },
+      },
+      select: {
+        smartAccountAddress: true,
+        whoopProfile: {
+          select: {
+            firstName: true,
+            lastName: true,
+          },
+        },
+      },
+    });
+
+    return users;
   }),
 
   getWhoopPublicProfileData: publicProcedure

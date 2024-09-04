@@ -253,6 +253,8 @@ const ProfilePage = ({ params }: { params: { id: string } }) => {
       functionName: "challengeCounter",
     });
 
+  const sendChallengeEmail = api.user.sendNewChallengeEmail.useMutation();
+
   const calculateChallengeTarget = (values: FormValues): number => {
     if (values.isTwoSided) {
       return 0;
@@ -406,17 +408,32 @@ const ProfilePage = ({ params }: { params: { id: string } }) => {
         to: WhoopTokenAddress,
         data: createChallengecallData,
       });
+
+      const latestChallengeId = Number(challengeCounterData);
+
+      await sendChallengeEmail.mutateAsync({
+        senderSmartAccountAddress: smartAccountAddress,
+        receiverSmartAccountAddress: userData?.smartAccountAddress,
+        challengeType: challengeType,
+        amount: values.amount,
+        isTwoSided: values.isTwoSided,
+        latestChallengeId,
+      });
+
       await refetchChallengeCounter();
+
       if (challengeCounterData) {
-        const latestChallengeId = Number(challengeCounterData);
         const newChallengeLink = `${env.NEXT_PUBLIC_DOMAIN_URL}pendingChallenge/${latestChallengeId}`;
         setChallengeLink(newChallengeLink);
       }
+
       toast({
         title: "Created Challenge successfully!",
         description: "Click the 'Copy Challenge Link' button to share.",
       });
+
       setIsPending(false);
+
       form.reset();
     } catch (error) {
       console.error("Error sending transaction:", error);
@@ -535,7 +552,7 @@ const ProfilePage = ({ params }: { params: { id: string } }) => {
                     <div className="text-4xl font-bold">
                       {Number(
                         profileData?.whoopRecoveries[0]?.recoveryScore ?? 0,
-                      ).toFixed(2)}
+                      ).toFixed(1)}
                       %
                     </div>
                     <div className="text-sm">Recovery Score</div>
@@ -546,7 +563,7 @@ const ProfilePage = ({ params }: { params: { id: string } }) => {
                       {Number(
                         profileData?.whoopSleeps[0]
                           ?.sleepEfficiencyPercentage ?? 0,
-                      ).toFixed(2)}
+                      ).toFixed(1)}
                       %
                     </div>
                     <div className="text-sm"> Sleep Efficiency</div>

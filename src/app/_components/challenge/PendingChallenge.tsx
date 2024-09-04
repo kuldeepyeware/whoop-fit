@@ -26,6 +26,8 @@ import ChallengeCardSkeleton from "../skeleton/ChallengeCardSkeleton";
 import { useAuth } from "@/hooks/authHook";
 import { useSmartAccount } from "@/hooks/smartAccountContext";
 import { encodeFunctionData } from "viem";
+import useParticipantsCache from "@/hooks/usersName";
+import { getParticipantNameByAddress } from "@/lib/participant";
 
 type PendingChallengeProps = {
   pendingChallengesData: any;
@@ -53,6 +55,8 @@ const PendingChallenge: React.FC<PendingChallengeProps> = ({
 
   const { smartAccountReady, smartAccountAddress, sendUserOperation } =
     useSmartAccount();
+
+  const participants = useParticipantsCache();
 
   const { walletReady } = useAuth();
 
@@ -262,7 +266,7 @@ const PendingChallenge: React.FC<PendingChallengeProps> = ({
               {pendingChallenges?.map((challenge, index) => (
                 <Card
                   key={index}
-                  className="mb-4 w-[320px] rounded-lg border-none bg-white/10 p-6 text-white shadow-lg backdrop-blur-md transition-shadow duration-300 hover:shadow-lg"
+                  className="mb-4 w-[310px] rounded-lg border-none bg-white/10 p-6 text-white shadow-lg backdrop-blur-md transition-shadow duration-300 hover:shadow-lg"
                 >
                   <div className="flex h-full flex-col justify-between">
                     <div className="mb-2 flex items-center justify-between">
@@ -299,8 +303,10 @@ const PendingChallenge: React.FC<PendingChallengeProps> = ({
                       </p>
                       <p className="text-sm">
                         <span className="font-semibold">Challenger:</span>{" "}
-                        {challenge.challenger.slice(0, 6)}...
-                        {challenge.challenger.slice(-4)}
+                        {getParticipantNameByAddress(
+                          participants,
+                          challenge.challenger,
+                        )}
                       </p>
                     </div>
                     <div className="flex justify-center space-x-2">

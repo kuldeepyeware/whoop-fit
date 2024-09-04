@@ -20,6 +20,7 @@ export const env = createEnv({
     RPC_URL: z.string(),
     CRON_SECRET: z.string(),
     PRIVY_APP_SECRET: z.string(),
+    MAILER_API_KEY: z.string(),
   },
 
   /**
@@ -31,6 +32,7 @@ export const env = createEnv({
     NEXT_PUBLIC_PRIVY_APP_ID: z.string(),
     NEXT_PUBLIC_BASE_SEPOLIA_RPC_URL: z.string(),
     NEXT_PUBLIC_DOMAIN_URL: z.string(),
+    NEXT_PUBLIC_UPLOADCARE: z.string(),
   },
 
   /**
@@ -53,6 +55,8 @@ export const env = createEnv({
     NEXT_PUBLIC_BASE_SEPOLIA_RPC_URL:
       process.env.NEXT_PUBLIC_BASE_SEPOLIA_RPC_URL,
     NEXT_PUBLIC_DOMAIN_URL: process.env.NEXT_PUBLIC_DOMAIN_URL,
+    NEXT_PUBLIC_UPLOADCARE: process.env.NEXT_PUBLIC_UPLOADCARE,
+    MAILER_API_KEY: process.env.MAILER_API_KEY,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially

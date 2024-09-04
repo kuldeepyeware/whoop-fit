@@ -13,6 +13,8 @@ import { Badge } from "@/app/_components/ui/badge";
 import { type Challenge } from "@/schemas/types/challengeTypes";
 import { getBadgeVariant, getChallengeTypeString } from "@/lib/challenge";
 import ChallengeCardSkeleton from "../skeleton/ChallengeCardSkeleton";
+import { getParticipantNameByAddress } from "@/lib/participant";
+import useParticipantsCache from "@/hooks/usersName";
 
 type RejectedChallengeProps = {
   rejectedChallengeData: any;
@@ -24,6 +26,7 @@ const RejectedChallenge: React.FC<RejectedChallengeProps> = ({
   isLoading,
 }) => {
   const [rejectedChallenges, setRejectedChallenges] = useState<Challenge[]>([]);
+  const participants = useParticipantsCache();
 
   useEffect(() => {
     if (rejectedChallengeData) {
@@ -50,7 +53,7 @@ const RejectedChallenge: React.FC<RejectedChallengeProps> = ({
                 rejectedChallenges.map((challenge, index) => (
                   <Card
                     key={index}
-                    className="mb-4 w-[320px] rounded-lg border-none bg-white/10 p-6 text-white shadow-lg backdrop-blur-md transition-shadow duration-300 hover:shadow-lg"
+                    className="mb-4 w-[310px] rounded-lg border-none bg-white/10 p-6 text-white shadow-lg backdrop-blur-md transition-shadow duration-300 hover:shadow-lg"
                   >
                     <div className="flex h-full flex-col justify-between">
                       <div className="mb-2 flex items-center justify-between">
@@ -91,8 +94,10 @@ const RejectedChallenge: React.FC<RejectedChallengeProps> = ({
                         )}
                         <p className="text-sm">
                           <span className="font-semibold">Challenger:</span>{" "}
-                          {challenge.challenger.slice(0, 6)}...
-                          {challenge.challenger.slice(-4)}
+                          {getParticipantNameByAddress(
+                            participants,
+                            challenge.challenger,
+                          )}
                         </p>
                       </div>
                     </div>

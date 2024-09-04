@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 const UNAUTHENTICATED_PAGES = ["/login"];
-const PUBLIC_PAGES = ["/profile", "/pendingChallenge", "/"];
+const PUBLIC_PAGES = ["/profile", "/pendingChallenge", "/appMetrics", "/"];
 
 function isPublicPage(pathname: string) {
   return PUBLIC_PAGES.some(

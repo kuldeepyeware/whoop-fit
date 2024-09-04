@@ -10,19 +10,13 @@ import { CheckIcon, XIcon, ClockIcon, LockIcon } from "lucide-react";
 import { type Challenge } from "@/schemas/types/challengeTypes";
 import { formatTimeRemaining, getChallengeTypeString } from "@/lib/challenge";
 import { useSmartAccount } from "@/hooks/smartAccountContext";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/app/_components/ui/card";
-import Link from "next/link";
 import { useToast } from "@/app/_components/ui/use-toast";
 import { encodeFunctionData } from "viem";
 import { tokenAbi, tokenAddress } from "TokenContract";
 import { Button } from "@/app/_components/ui/button";
 import { useRouter } from "next/navigation";
+import InvalidChallenge from "@/app/_components/common/InvalidChallenge";
+import Loading from "@/app/_components/common/Loading";
 
 const isZeroAddress = (address: string) =>
   address === "0x0000000000000000000000000000000000000000";
@@ -78,38 +72,11 @@ const ChallengePage = ({ params }: { params: { id: string } }) => {
   }, [challengeData, authenticated, smartAccountReady, smartAccountAddress]);
 
   if (!isReady || !ready) {
-    return (
-      <div className="flex h-[calc(100vh-4rem)] items-center justify-center text-white">
-        <div className="text-center">
-          <div className="mx-auto h-16 w-16 animate-spin rounded-full border-b-2 border-gray-100"></div>
-          <p className="mt-4 text-xl font-semibold">Loading challenge...</p>
-        </div>
-      </div>
-    );
+    return <Loading />;
   }
 
   if (isInvalidChallenge) {
-    return (
-      <div className="flex h-[calc(100vh-4rem)] items-center justify-center px-4 py-12">
-        <Card className="w-full max-w-md border-none bg-white/10 text-white shadow-lg backdrop-blur-md">
-          <CardHeader>
-            <CardTitle className="text-center text-xl">
-              Invalid Challenge
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="text-center">
-            The challenge you are trying to view is not valid
-          </CardContent>
-          <CardFooter className="flex justify-center">
-            <Link href="/" passHref>
-              <p className="inline-flex items-center justify-center rounded-md bg-blue-500 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-600">
-                Back to Home
-              </p>
-            </Link>
-          </CardFooter>
-        </Card>
-      </div>
-    );
+    return <InvalidChallenge />;
   }
 
   const handleAccept = async () => {
