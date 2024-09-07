@@ -190,6 +190,7 @@ const AcceptedChallenge: React.FC<AcceptedChallengeProps> = ({
                       <div className="mt-3 flex justify-center space-x-2">
                         <Link
                           href={`/challenge/${challenge.challengeId}`}
+                          prefetch={true}
                           className="w-full rounded-md bg-white p-2 text-center font-medium text-black transition-colors hover:bg-white/80"
                         >
                           View Challenge

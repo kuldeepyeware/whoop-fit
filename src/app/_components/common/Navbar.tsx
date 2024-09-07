@@ -39,6 +39,7 @@ const Navbar = () => {
   const pathname = usePathname();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [canMint, setCanMint] = useState(false);
+  const [minting, setMinting] = useState(false);
   const { ready, authenticated, logout } = usePrivy();
   // const { fundWallet } = useFundWallet();
   const { smartAccountReady, sendUserOperation, smartAccountAddress } =
@@ -84,6 +85,8 @@ const Navbar = () => {
       return;
     }
 
+    setMinting(true);
+
     const mintAmount = 500;
 
     const mintCallData = encodeFunctionData({
@@ -114,6 +117,8 @@ const Navbar = () => {
         title: `Minted Failed`,
         variant: "destructive",
       });
+    } finally {
+      setMinting(false);
     }
   };
 
@@ -238,8 +243,15 @@ const Navbar = () => {
               >
                 Fund Wallet
               </DropdownMenuItem> */}
-              <DropdownMenuItem disabled={!canMint} onClick={handleMint}>
-                {canMint ? "Mint Tokens" : "Mint (24h cooldown)"}
+              <DropdownMenuItem
+                disabled={!canMint || minting}
+                onClick={handleMint}
+              >
+                {canMint
+                  ? minting
+                    ? "Minting..."
+                    : "Mint Tokens"
+                  : "Mint (24h cooldown)"}
               </DropdownMenuItem>
               <DropdownMenuItem>
                 Balance: ${userBalance ? String(userBalance) : 0}

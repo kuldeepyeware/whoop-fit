@@ -290,7 +290,11 @@ const UserInfo = () => {
       )}
       {isConnected && authenticated && (
         <div className="mb-5 mt-7 flex justify-center">
-          <Link href="/users">
+          <Link
+            href="/users"
+            prefetch={true}
+            className="rounded-md bg-white text-black hover:bg-white/70"
+          >
             <Button className="rounded-md bg-white text-black hover:bg-white/70">
               Start Challenges
             </Button>

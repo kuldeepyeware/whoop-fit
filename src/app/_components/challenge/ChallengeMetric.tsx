@@ -14,10 +14,10 @@ const ChallengeMetric = ({
   comparision?: boolean;
 }) => {
   return (
-    <div className="relative mb-4 flex items-center justify-between rounded-lg bg-white/5 p-4">
+    <div className="relative mb-4 flex items-center justify-between gap-6 rounded-lg bg-white/5 p-4">
       <div className="flex items-center">
         <Icon className="mr-3 h-6 w-6 text-blue-400" />
-        <span className="font-medium">{title}</span>
+        <span className="max-w-32 font-medium">{title}</span>
       </div>
       <div className="text-right">
         <div className="flex text-lg font-bold">

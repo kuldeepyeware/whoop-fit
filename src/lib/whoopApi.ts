@@ -22,21 +22,21 @@ export async function refreshWhoopToken(refreshToken: string) {
       },
     );
 
-    const responseText = await response.text();
-
-    if (!response.ok) {
-      throw new Error(
-        `Failed to refresh WHOOP token: ${response.status} ${responseText}`,
-      );
-    }
-
-    const tokenData = JSON.parse(responseText) as {
+    const responseJson = (await response.json()) as {
       access_token: string;
       refresh_token: string;
       expires_in: number;
       scope: string;
       token_type: "bearer";
     };
+
+    if (!response.ok) {
+      throw new Error(
+        `Failed to refresh WHOOP token: ${response.status} ${JSON.stringify(responseJson)}`,
+      );
+    }
+
+    const tokenData = responseJson;
 
     return tokenData;
   } catch (error) {
